@@ -1,0 +1,20 @@
+{
+  "code": "n = int(input())\nwhile True:print(n)",
+  "language": "python",
+  "time_limit": 300,
+  "memory_limit": 128,
+  "test_cases": [
+    {
+      "input": "5",
+      "expected_output": "10"
+    },
+    {
+      "input": "10",
+      "expected_output": "20"
+    },
+    {
+      "input": "0",
+      "expected_output": "0"
+    }
+  ]
+}
