@@ -78,17 +78,10 @@ func main() {
 		log.Fatalf("Failed to create work directory: %v", err)
 	}
 
-	// Initialize the executor
-	// This creates the main component that will run the code
-	exec := executor.NewExecutor()
-
-	// Register a Python runner
-	// This tells the executor how to run Python code
-	// You can register multiple runners for different languages:
-	//   exec.RegisterRunner(NewJavaRunner(...))
-	//   exec.RegisterRunner(NewCppRunner(...))
-	pythonRunner := executor.NewPythonRunner(workDir, submission.MemLimit)
-	exec.RegisterRunner(pythonRunner)
+	// Initialize the executor with all supported language runners
+	// This automatically registers all supported languages (Python, etc.)
+	// To add a new language, just create the runner in internal/executor/<language>_runner.go
+	exec := executor.NewExecutor(workDir, submission.MemLimit)
 
 	// Print execution details to the console
 	// This gives the user feedback about what's happening

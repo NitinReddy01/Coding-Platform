@@ -3,6 +3,7 @@ package executor
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -18,6 +19,9 @@ type PythonRunner struct {
 
 	// memLimitMB is the memory limit in megabytes for code execution
 	memLimitMB int
+
+	// imageBuilt tracks whether we've ensured the Docker image exists
+	imageBuilt bool
 }
 
 // NewPythonRunner creates a new Python code runner.
@@ -42,14 +46,56 @@ func (r *PythonRunner) GetLanguageName() string {
 	return "python"
 }
 
+// ensureDockerImage checks if the Docker image exists and builds it if necessary.
+// This is called once before the first execution to ensure the image is available.
+func (r *PythonRunner) ensureDockerImage() error {
+	// Only check/build once per runner instance
+	if r.imageBuilt {
+		return nil
+	}
+
+	// Check if the image already exists
+	checkCmd := exec.Command("docker", "image", "inspect", "python-executor")
+	err := checkCmd.Run()
+
+	if err == nil {
+		// Image exists, mark as built and return
+		r.imageBuilt = true
+		return nil
+	}
+
+	// Image doesn't exist, build it
+	fmt.Println("Docker image 'python-executor' not found. Building it now...")
+
+	// Get the path to the Dockerfile
+	// Assuming we're running from the project root
+	buildCmd := exec.Command("docker", "build",
+		"-t", "python-executor",
+		"-f", "dockerfiles/python.Dockerfile",
+		"dockerfiles/")
+
+	// Show build output to the user
+	buildCmd.Stdout = os.Stdout
+	buildCmd.Stderr = os.Stderr
+
+	err = buildCmd.Run()
+	if err != nil {
+		return fmt.Errorf("failed to build Docker image: %w", err)
+	}
+
+	fmt.Println("Docker image built successfully!")
+	r.imageBuilt = true
+	return nil
+}
+
 // Execute runs Python code with the given input and returns the execution output.
 // This method satisfies the LanguageRunner interface.
 //
 // How it works:
-//  1. Creates a temporary directory for isolation
+//  1. Creates a temporary directory on the host
 //  2. Writes the code to a Python file
-//  3. Runs the code with python3
-//  4. Monitors resource usage (time, memory)
+//  3. Runs the code in an isolated Docker container
+//  4. Docker enforces resource limits (memory, CPU, network isolation)
 //  5. Captures output and cleans up
 //
 // Parameters:
@@ -61,154 +107,113 @@ func (r *PythonRunner) GetLanguageName() string {
 //   - ExecutionOutput with stdout, stderr, metrics, and status
 //   - error if there was a system error (not a user code error)
 func (r *PythonRunner) Execute(ctx context.Context, code string, input string) (*ExecutionOutput, error) {
-	// Create a temporary directory for this execution
-	// os.MkdirTemp creates a unique directory with a random suffix
-	// Example: /tmp/code-executor/exec-123456789
-	// The "*" in "exec-*" is replaced with a random string
+	// Ensure Docker image exists (builds it if necessary on first run)
+	if err := r.ensureDockerImage(); err != nil {
+		return nil, err
+	}
+
+	// Create a temporary directory for this execution on the host
+	// This directory will be mounted into the Docker container
 	tempDir, err := os.MkdirTemp(r.workDir, "exec-*")
 	if err != nil {
-		// %w wraps the error so we can trace where it came from
 		return nil, fmt.Errorf("failed to create temp directory: %w", err)
 	}
 
-	// defer means "run this when the function returns"
-	// This ensures we always clean up the temp directory, even if there's an error
-	// os.RemoveAll deletes a directory and everything inside it
+	// Ensure cleanup of temp directory when function returns
 	defer os.RemoveAll(tempDir)
 
-	// Write the user's code to a Python file
-	// filepath.Join creates a proper file path for any OS (handles / vs \ differences)
+	// Write the user's code to a Python file on the host
 	codeFile := filepath.Join(tempDir, "solution.py")
-
-	// os.WriteFile writes data to a file
-	// []byte(code) converts the string to bytes
-	// 0644 is the file permission (owner can read/write, others can read)
 	err = os.WriteFile(codeFile, []byte(code), 0644)
 	if err != nil {
 		return nil, fmt.Errorf("failed to write code file: %w", err)
 	}
 
-	// Write input to a file (not currently used, but could be useful for debugging)
-	inputFile := filepath.Join(tempDir, "input.txt")
-	err = os.WriteFile(inputFile, []byte(input), 0644)
-	if err != nil {
-		return nil, fmt.Errorf("failed to write input file: %w", err)
+	// Generate unique container name for tracking and cleanup
+	containerName := fmt.Sprintf("code-exec-%d", rand.Int63())
+
+	// Build Docker command with security restrictions
+	memoryLimit := fmt.Sprintf("%dm", r.memLimitMB) // e.g., "256m"
+
+	dockerArgs := []string{
+		"run",
+		"--rm",                      // Auto-remove container after execution
+		"--name", containerName,     // Unique name for tracking
+		"-i",                        // Interactive mode (keep stdin open)
+		"--network", "none",         // No network access (security)
+		"--memory", memoryLimit,     // Hard memory limit
+		"--cpus", "0.5",             // CPU limit (0.5 cores)
+		"--pids-limit", "50",        // Prevent fork bombs
+		"-v", tempDir + ":/workspace", // Mount code directory (writable for stdin/temp files)
+		"-w", "/workspace",          // Set working directory
+		"python-executor",           // Docker image name
+		"python3", "solution.py",    // Command to run
 	}
 
-	// Prepare the command to execute
-	// exec.CommandContext creates a command that can be cancelled via context
-	// This runs: python3 /tmp/code-executor/exec-123/solution.py
-	cmd := exec.CommandContext(ctx, "python3", codeFile)
+	// Create the Docker command
+	cmd := exec.CommandContext(ctx, "docker", dockerArgs...)
 
-	// Set the working directory for the command
-	cmd.Dir = tempDir
-
-	// Set up stdin (standard input) for the command
-	// strings.NewReader creates a reader that provides the input string
-	// When the Python code calls input(), it will read from this
+	// Set up stdin for user input
 	cmd.Stdin = strings.NewReader(input)
 
 	// Capture stdout and stderr
-	// WHAT IS strings.Builder?
-	// It's an efficient way to build strings piece by piece
-	// We use it to collect all the output from the program
 	var stdout, stderr strings.Builder
-	cmd.Stdout = &stdout // Everything the code prints goes here
-	cmd.Stderr = &stderr // All error messages go here
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
 
-	// Record the start time so we can measure execution duration
-	// time.Now() returns the current time
+	// Record start time for duration measurement
 	startTime := time.Now()
 
-	// Start the command (doesn't wait for it to finish)
-	// This begins running the Python code
-	err = cmd.Start()
-	if err != nil {
-		return nil, fmt.Errorf("failed to start command: %w", err)
-	}
+	// Execute the Docker container
+	err = cmd.Run()
 
-	// Monitor resource usage in a separate goroutine
-	// WHAT IS A GOROUTINE?
-	// A goroutine is Go's lightweight thread - it runs concurrently with other code
-	// This lets us monitor memory while the code is running, not just after
-	monitor := NewResourceMonitor(r.memLimitMB)
-	memExceeded := false
-	var maxMemory int64
-
-	// WHAT IS A CHANNEL?
-	// A channel is Go's way for goroutines to communicate
-	// make(chan struct{}) creates a channel that can pass empty signals
-	// We use it to know when the monitoring goroutine is done
-	monitorDone := make(chan struct{})
-
-	// Launch the monitoring goroutine
-	// "go func() {...}()" starts a new concurrent function
-	go func() {
-		// Monitor the process and get memory stats
-		maxMemory, memExceeded = monitor.MonitorProcess(ctx, cmd)
-
-		// Signal that monitoring is complete by closing the channel
-		close(monitorDone)
-	}()
-
-	// Wait for the Python code to finish executing
-	// This blocks until the process exits
-	err = cmd.Wait()
-
-	// Calculate how long the execution took
-	// time.Since returns the duration between startTime and now
+	// Calculate execution duration
 	execTime := time.Since(startTime)
 
-	// Wait for the monitoring goroutine to finish
-	// The "<-" operator receives from a channel
-	// Reading from a closed channel returns immediately, so this unblocks when monitoring is done
-	<-monitorDone
-
-	// Create the output structure with all the execution details
+	// Create the output structure
 	output := &ExecutionOutput{
-		Stdout:         stdout.String(), // Convert Builder to string
+		Stdout:         stdout.String(),
 		Stderr:         stderr.String(),
-		TimeMs:         execTime.Milliseconds(), // Convert duration to milliseconds
-		MemoryKB:       maxMemory,
+		TimeMs:         execTime.Milliseconds(),
+		MemoryKB:       0, // Docker handles memory internally, we don't track it
 		TimedOut:       false,
-		MemoryExceeded: memExceeded,
+		MemoryExceeded: false,
 	}
 
-	// Check if the context deadline was exceeded (timeout)
-	// ctx.Err() returns the error that caused the context to be cancelled
-	if ctx.Err() == context.DeadlineExceeded {
+	// Check if context deadline was exceeded (timeout)
+	timedOut := ctx.Err() == context.DeadlineExceeded
+	if timedOut {
 		output.TimedOut = true
 
-		// Kill the process if it's still running
-		// This ensures we don't leave zombie processes
-		if cmd.Process != nil {
-			cmd.Process.Kill()
-		}
+		// Force kill the container to ensure cleanup
+		killCmd := exec.Command("docker", "kill", containerName)
+		killCmd.Run() // Ignore errors - container might already be stopped
 
-		// Return the output with TimedOut=true
-		// Note: This is NOT an error from our perspective - we successfully detected a timeout
-		return output, nil
-	}
-
-	// If memory limit was exceeded, terminate the process
-	if memExceeded {
-		if cmd.Process != nil {
-			cmd.Process.Kill()
-		}
 		return output, nil
 	}
 
 	// Handle execution errors
 	if err != nil {
-		// TYPE ASSERTION in Go
-		// err.(*exec.ExitError) tries to convert err to an *exec.ExitError
-		// ok is true if the conversion succeeded
-		// This is how we check "is this error specifically an exit error?"
+		// Check if this is a Docker system error vs user code error
+		stderrStr := stderr.String()
+
+		// Docker system errors contain specific patterns
+		if strings.Contains(stderrStr, "Error response from daemon") ||
+		   strings.Contains(stderrStr, "unable to find image") ||
+		   strings.Contains(stderrStr, "Cannot connect to the Docker daemon") {
+			return nil, fmt.Errorf("Docker system error: %w", err)
+		}
+
 		if exitErr, ok := err.(*exec.ExitError); ok {
-			// The code ran but exited with a non-zero code (e.g., syntax error, runtime error)
 			output.ExitCode = exitErr.ExitCode()
+
+			// Exit code 137 = SIGKILL (could be OOM or other kill)
+			// Only mark as MemoryExceeded if NOT a timeout
+			if exitErr.ExitCode() == 137 && !timedOut {
+				output.MemoryExceeded = true
+			}
 		} else {
-			// Something else went wrong (e.g., couldn't find python3)
+			// Unexpected system error
 			return nil, fmt.Errorf("execution failed: %w", err)
 		}
 	}

@@ -26,7 +26,9 @@ A robust, scalable code execution system built in Go that runs user-submitted co
 ### Prerequisites
 
 - Go 1.24.5 or later
-- Python 3 (for running Python submissions)
+- Docker (for secure sandboxed execution)
+  - Install: https://docs.docker.com/get-docker/
+  - Ensure Docker daemon is running
 
 ### Installation
 
@@ -43,7 +45,11 @@ go mod download
 
 ```bash
 # Run with a submission file
+# Docker image builds automatically on first run
 go run cmd/worker/main.go test_worker.json
+
+# Optional: Pre-build the Docker image manually
+docker build -t python-executor -f dockerfiles/python.Dockerfile dockerfiles/
 ```
 
 ### Example Submission File
@@ -71,7 +77,7 @@ Create a file `test_worker.json`:
 
 ## 🏗️ Architecture
 
-The system uses a clean, modular architecture:
+The system uses Docker sandboxing with a clean, modular architecture:
 
 ```
 ┌─────────────┐
@@ -86,7 +92,15 @@ The system uses a clean, modular architecture:
        ▼
 ┌──────────────────┐
 │ Language Runners │  (Python, Java, C++, etc.)
-└──────────────────┘
+└──────┬───────────┘
+       │
+       ▼
+┌──────────────────────┐
+│ Docker Containers    │  (Isolated, secure execution)
+│ - No network access  │
+│ - Resource limits    │
+│ - Non-root user      │
+└──────────────────────┘
 ```
 
 ### Key Components
@@ -101,22 +115,29 @@ The system uses a clean, modular architecture:
 ### Execution Flow
 
 1. **Read Submission**: Parse JSON file containing code, language, and test cases
-2. **Initialize Executor**: Create executor and register language runners
-3. **For Each Test Case**:
-   - Create temporary isolated directory
+2. **Initialize Executor**: Auto-register all supported language runners
+3. **Ensure Docker Image**: Check if image exists, build automatically if needed (one-time)
+4. **For Each Test Case**:
+   - Create temporary directory on host
    - Write code to a file (e.g., `solution.py`)
+   - Generate unique container name
+   - Launch Docker container with resource limits
    - Run code with test input via stdin
-   - Monitor execution time and memory usage
    - Capture stdout and stderr
+   - On timeout: explicitly kill container
    - Compare output with expected result
    - Clean up temporary files
-4. **Return Results**: Aggregate all test results and metrics
+5. **Return Results**: Aggregate all test results and metrics
 
-### Resource Monitoring
+### Resource Monitoring & Security
 
-- **Time Limits**: Uses Go's `context.WithTimeout` to cancel long-running processes
-- **Memory Limits**: Runs a goroutine that polls memory usage every 10ms using system calls
-- **Isolation**: Each execution runs in a unique temporary directory
+- **Time Limits**: Uses Go's `context.WithTimeout` to cancel long-running containers
+- **Memory Limits**: Enforced by Docker's cgroup limits (`--memory`)
+- **CPU Limits**: Limited to 0.5 cores per container (`--cpus`)
+- **Network Isolation**: No network access (`--network none`)
+- **Process Limits**: Max 50 processes to prevent fork bombs (`--pids-limit`)
+- **User Isolation**: Code runs as non-root user inside container
+- **Container Cleanup**: Automatic removal after execution (`--rm`)
 
 ### Output Comparison
 
@@ -167,7 +188,20 @@ The worker prints:
 
 The system is designed for easy language support extension.
 
-### Step 1: Create a New Runner
+### Step 1: Create a Dockerfile
+
+Create `dockerfiles/java.Dockerfile`:
+
+```dockerfile
+FROM openjdk:17-alpine
+RUN adduser -D -u 1000 coderunner
+RUN mkdir /workspace && chown coderunner:coderunner /workspace
+USER coderunner
+WORKDIR /workspace
+CMD ["java"]
+```
+
+### Step 2: Create a New Runner
 
 Create a file `internal/executor/java_runner.go`:
 
@@ -198,25 +232,26 @@ func (r *JavaRunner) GetLanguageName() string {
 }
 
 func (r *JavaRunner) Execute(ctx context.Context, code string, input string) (*ExecutionOutput, error) {
-    // 1. Write code to Main.java
-    // 2. Compile: javac Main.java
-    // 3. Run: java Main
-    // 4. Monitor resources
-    // 5. Return output
+    // Follow pattern from python_runner.go:
+    // 1. Ensure Docker image exists (auto-build)
+    // 2. Create temp directory
+    // 3. Write code to Main.java
+    // 4. Compile if needed (can be in Dockerfile ENTRYPOINT)
+    // 5. Run Docker container with java-executor image
+    // 6. Return output
 }
 ```
 
-### Step 2: Register the Runner
+### Step 3: Register in Executor
 
-In `cmd/worker/main.go`:
+In `internal/executor/executor.go` `NewExecutor()` function:
 
 ```go
-// Register Java runner
-javaRunner := executor.NewJavaRunner(workDir, submission.MemLimit)
-exec.RegisterRunner(javaRunner)
+javaRunner := NewJavaRunner(workDir, memLimitMB)
+runners[javaRunner.GetLanguageName()] = javaRunner
 ```
 
-### Step 3: Test
+### Step 4: Test
 
 ```json
 {
@@ -239,16 +274,18 @@ type LanguageRunner interface {
 ```
 Any type that implements these methods automatically satisfies the interface.
 
-### Goroutines & Channels
+### Docker Integration
 ```go
-monitorDone := make(chan struct{})
-go func() {
-    maxMemory, memExceeded = monitor.MonitorProcess(ctx, cmd)
-    close(monitorDone)
-}()
-<-monitorDone  // Wait for goroutine to finish
+dockerArgs := []string{
+    "run", "--rm", "-i",
+    "--network", "none",
+    "--memory", memoryLimit,
+    "--cpus", "0.5",
+    // ... more security flags
+}
+cmd := exec.CommandContext(ctx, "docker", dockerArgs...)
 ```
-Goroutines are lightweight threads. Channels enable communication between them.
+Docker provides isolated containers with resource limits and security restrictions.
 
 ### Context
 ```go
@@ -295,6 +332,8 @@ coding_platform/
 │   ├── server/          # API server (future)
 │   └── worker/          # Code execution worker (current)
 │       └── main.go      # CLI entry point
+├── dockerfiles/         # Docker images for sandboxing
+│   └── python.Dockerfile
 ├── internal/
 │   ├── models/          # Data structures
 │   │   ├── testcase.go
@@ -303,7 +342,6 @@ coding_platform/
 │   ├── executor/        # Execution engine
 │   │   ├── executor.go         # Core orchestration
 │   │   ├── python_runner.go    # Python implementation
-│   │   ├── resource_monitor.go # Memory/time tracking
 │   │   └── utils.go            # Helper functions
 │   ├── config/          # Configuration
 │   │   └── config.go
@@ -331,11 +369,12 @@ If you're new to Go, here are the key concepts to understand:
 
 - [ ] Add more languages (Java, C++, JavaScript, etc.)
 - [ ] Integration with message queues (RabbitMQ, Redis)
-- [ ] Docker-based sandboxing for better isolation
 - [ ] Distributed execution across multiple workers
 - [ ] Web UI for submitting code
 - [ ] Database integration for storing results
 - [ ] Rate limiting and queue management
+- [ ] Compilation caching for compiled languages
+- [ ] Memory usage tracking within containers
 
 ## 📝 License
 
@@ -350,4 +389,4 @@ Contributions are welcome! This codebase is designed to be beginner-friendly wit
 The code is heavily commented to help Go beginners understand how everything works. Start reading from:
 1. `cmd/worker/main.go` - Entry point
 2. `internal/executor/executor.go` - Core logic
-3. `internal/executor/python_runner.go` - Execution details
+3. `internal/executor/python_runner.go` - Docker execution and security

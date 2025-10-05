@@ -1,20 +1,11 @@
 {
-  "code": "n = int(input())\nwhile True:print(n)",
+  "code": "import sys\nsys.setrecursionlimit(1000000)\n\ndef fib(n):\n    if n <= 1:\n        return n\n    return fib(n-1) + fib(n-2)\n\nn = int(input())\nprint(fib(n))",
   "language": "python",
-  "time_limit": 300,
+  "time_limit": 1000,
   "memory_limit": 128,
   "test_cases": [
-    {
-      "input": "5",
-      "expected_output": "10"
-    },
-    {
-      "input": "10",
-      "expected_output": "20"
-    },
-    {
-      "input": "0",
-      "expected_output": "0"
-    }
+    { "input": "5", "expected_output": "5" },
+    { "input": "10", "expected_output": "55" },
+    { "input": "35", "expected_output": "9227465" }
   ]
 }
