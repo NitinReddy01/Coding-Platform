@@ -64,31 +64,28 @@ type Executor struct {
 	runners map[string]LanguageRunner
 }
 
-// NewExecutor creates and returns a new Executor instance.
-// In Go, constructor functions are typically named "New" or "New<Type>"
-func NewExecutor() *Executor {
+// NewExecutor creates and returns a new Executor instance with all supported language runners.
+// All supported languages are automatically registered - no manual registration needed.
+//
+// Parameters:
+//   - workDir: Directory where temporary execution files will be created
+//   - memLimitMB: Maximum memory allowed in megabytes for code execution
+func NewExecutor(workDir string, memLimitMB int) *Executor {
+	runners := make(map[string]LanguageRunner)
+
+	// Auto-register all supported language runners
+	pythonRunner := NewPythonRunner(workDir, memLimitMB)
+	runners[pythonRunner.GetLanguageName()] = pythonRunner
+
+	// Future languages can be added here:
+	// javaRunner := NewJavaRunner(workDir, memLimitMB)
+	// runners[javaRunner.GetLanguageName()] = javaRunner
+
 	return &Executor{
-		// make() is Go's built-in function to create a map
-		// This creates an empty map that can store LanguageRunner instances by name
-		runners: make(map[string]LanguageRunner),
+		runners: runners,
 	}
 }
 
-// RegisterRunner adds a new language runner to the executor.
-// Call this to add support for a new programming language.
-//
-// Example:
-//
-//	executor := NewExecutor()
-//	pythonRunner := NewPythonRunner("/tmp", 256)
-//	executor.RegisterRunner(pythonRunner)
-//
-// The (e *Executor) syntax means this is a method on the Executor type.
-// The "e" is the receiver - like "this" or "self" in other languages.
-func (e *Executor) RegisterRunner(runner LanguageRunner) {
-	// Store the runner in the map using its language name as the key
-	e.runners[runner.GetLanguageName()] = runner
-}
 
 // Execute runs a complete submission (code + test cases) and returns the results.
 // This is the main entry point for code execution.
