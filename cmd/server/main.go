@@ -2,8 +2,8 @@ package main
 
 import (
 	"app/internal/config"
+	"app/internal/db"
 	"app/internal/routes"
-	"fmt"
 	"log"
 	"net/http"
 )
@@ -18,7 +18,9 @@ func main() {
 		Addr:    ":" + config.Port,
 		Handler: router,
 	}
-	fmt.Printf("BE server running on %s", config.Port)
+	db.Connect(config.DB_URL)
+	log.Println("BE server running on", config.Port)
+	defer db.Close()
 	err := server.ListenAndServe()
 	if err != nil {
 		log.Fatalf("Unable to start the server: %s", err)

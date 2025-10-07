@@ -1,0 +1,105 @@
+# Air configuration for hot-reloading Go applications
+# Documentation: https://github.com/air-verse/air
+
+# Root directory of the project (where to watch for changes)
+root = "."
+
+# Directory for test data (won't be watched for changes)
+testdata_dir = "testdata"
+
+# Temporary directory where the compiled binary is stored
+tmp_dir = "tmp"
+
+[build]
+  # Arguments to pass to the binary after it's built
+  args_bin = []
+
+  # Path where the compiled binary will be stored
+  bin = "./tmp/main"
+
+  # Build command - compiles the server code
+  # Change this if your server entry point is different
+  cmd = "go build -o ./tmp/main ./cmd/server"
+
+  # Delay (ms) before rebuilding after a file change (prevents multiple rebuilds)
+  delay = 1000
+
+  # Directories to exclude from watching
+  # Add any directories you don't want to trigger rebuilds
+  exclude_dir = ["assets", "tmp", "vendor", "testdata", "db", "dockerfiles"]
+
+  # Specific files to exclude from watching
+  exclude_file = []
+
+  # Regex patterns for files to exclude (e.g., test files won't trigger rebuilds)
+  exclude_regex = ["_test.go"]
+
+  # If true, only rebuild when file content actually changes (not just timestamp)
+  exclude_unchanged = false
+
+  # Follow symbolic links when watching directories
+  follow_symlink = false
+
+  # Full command to run the binary (leave empty to use bin + args_bin)
+  full_bin = ""
+
+  # Specific directories to watch (empty = watch all)
+  include_dir = []
+
+  # File extensions to watch for changes
+  # Add more extensions if you have templates, HTML, etc.
+  include_ext = ["go", "tpl", "tmpl", "html"]
+
+  # Specific files to watch (empty = watch based on extensions)
+  include_file = []
+
+  # Delay (duration) to kill the old process before starting new one
+  kill_delay = "0s"
+
+  # Log file for build errors
+  log = "build-errors.log"
+
+  # Use polling instead of file system events (useful for Docker/VMs)
+  poll = false
+
+  # Interval for polling if poll = true
+  poll_interval = 0
+
+  # Rerun the binary without rebuilding if it crashes
+  rerun = false
+
+  # Delay before rerunning
+  rerun_delay = 500
+
+  # Send interrupt signal before killing process (more graceful shutdown)
+  send_interrupt = false
+
+  # Stop running old binary if build fails
+  stop_on_error = false
+
+[color]
+  # Customize colors for different output types (ANSI color codes)
+  # Leave empty for default colors
+  app = ""
+  build = "yellow"
+  main = "magenta"
+  runner = "green"
+  watcher = "cyan"
+
+[log]
+  # Only show logs from the main process (not air's internal logs)
+  main_only = false
+
+  # Show timestamp in logs
+  time = false
+
+[misc]
+  # Clean tmp directory on exit
+  clean_on_exit = false
+
+[screen]
+  # Clear screen on each rebuild
+  clear_on_rebuild = false
+
+  # Keep scroll position when rebuilding
+  keep_scroll = true

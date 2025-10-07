@@ -9,7 +9,8 @@ import (
 )
 
 type Config struct {
-	Port string
+	Port   string
+	DB_URL string
 }
 
 func Load() *Config {
@@ -22,8 +23,10 @@ func Load() *Config {
 	if err != nil {
 		log.Fatalf("Invalid port: %s", portString)
 	}
+	dbUrl := getEnv("DATABASE_URL", "postgres://postgres:secret@localhost:5432/postgres?sslmode=disable")
 	config := &Config{
-		Port: portString,
+		Port:   portString,
+		DB_URL: dbUrl,
 	}
 	return config
 }
