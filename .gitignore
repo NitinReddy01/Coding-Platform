@@ -2,6 +2,10 @@
 # If you prefer the allow list template instead of the deny list, see community template:
 # https://github.com/github/gitignore/blob/main/community/Golang/Go.AllowList.gitignore
 #
+# ============================================================================
+# BACKEND (Go)
+# ============================================================================
+
 # Binaries for programs and plugins
 *.exe
 *.exe~
@@ -25,14 +29,56 @@ profile.cov
 go.work
 go.work.sum
 
-# env file
-.env
+# Backend environment variables
+backend/.env
 
 # Editor/IDE
 # .idea/
 # .vscode/
-result.json
+backend/result.json
 
 # Air hot-reload temporary files
-tmp/
-build-errors.log
+backend/tmp/
+backend/build-errors.log
+
+# Backend binaries
+backend/bin/
+
+# ============================================================================
+# FRONTEND
+# ============================================================================
+
+# Dependencies
+frontend/node_modules/
+frontend/.pnp
+frontend/.pnp.js
+
+# Testing
+frontend/coverage/
+
+# Production builds
+frontend/build/
+frontend/dist/
+frontend/.next/
+frontend/out/
+
+# Frontend environment variables
+frontend/.env
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+
+# Debug logs
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+
+# IDE
+frontend/.vscode/
+frontend/.idea/
+
+# OS
+.DS_Store
+*.swp
+*.swo
