@@ -1,0 +1,61 @@
+@import "tailwindcss";
+
+/* Authentic LeetCode Dark Theme */
+@theme {
+  /* Backgrounds - Softer, warmer grays with better depth */
+  --color-background: 0 0% 16%;        /* #282828 - Main background */
+  --color-foreground: 0 0% 88%;        /* #e0e0e0 - Off-white text */
+  --color-card: 0 0% 18%;              /* #2d2d2d - Description panels */
+  --color-card-foreground: 0 0% 88%;
+  --color-popover: 0 0% 18%;
+  --color-popover-foreground: 0 0% 88%;
+
+  /* Primary - Orange/Gold accent (LeetCode's signature color) */
+  --color-primary: 38 100% 54%;        /* #ffa116 - Orange accent */
+  --color-primary-foreground: 0 0% 12%;
+
+  /* Secondary - Darker surfaces and hover states */
+  --color-secondary: 0 0% 20%;         /* #333333 - Hover states */
+  --color-secondary-foreground: 0 0% 88%;
+
+  /* Muted - For less emphasized content */
+  --color-muted: 0 0% 20%;
+  --color-muted-foreground: 0 0% 62%;  /* #9e9e9e - Softer muted text */
+
+  /* Accent - Orange/Gold */
+  --color-accent: 38 100% 54%;
+  --color-accent-foreground: 0 0% 12%;
+
+  /* Destructive - Red for errors and hard difficulty */
+  --color-destructive: 1 83% 60%;      /* #ef4743 - Red */
+  --color-destructive-foreground: 0 0% 88%;
+
+  /* Success - Teal for success and easy difficulty */
+  --color-success: 172 100% 36%;       /* #00b8a3 - Teal */
+  --color-success-foreground: 0 0% 88%;
+
+  /* Warning - Gold for medium difficulty */
+  --color-warning: 44 100% 56%;        /* #ffc01e - Gold */
+  --color-warning-foreground: 0 0% 12%;
+
+  /* Borders and inputs - More subtle */
+  --color-border: 0 0% 24%;            /* #3e3e3e - Subtle borders */
+  --color-input: 0 0% 24%;
+  --color-ring: 38 100% 54%;
+
+  /* Border radius */
+  --radius-sm: calc(0.5rem - 4px);
+  --radius-md: calc(0.5rem - 2px);
+  --radius-lg: 0.5rem;
+}
+
+* {
+  border-color: hsl(var(--color-border));
+}
+
+body {
+  background-color: hsl(var(--color-background));
+  color: hsl(var(--color-foreground));
+  margin: 0;
+  min-height: 100vh;
+}
