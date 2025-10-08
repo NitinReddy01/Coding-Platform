@@ -1,15 +1,28 @@
-# Coding Platform - Code Execution Worker
+# Coding Platform
 
-A robust, scalable code execution system built in Go that runs user-submitted code against test cases with time and memory limits. Perfect for building coding challenge platforms, online judges, or automated code testing systems.
+A robust, full-featured coding challenge platform built in Go with secure code execution, user authentication, problem management, and role-based access control. Perfect for building competitive programming platforms, online judges, or educational coding systems.
 
 ## 🎯 Features
 
+### Code Execution
 - **Multi-language Support**: Extensible architecture supports multiple programming languages (currently Python)
 - **Resource Limits**: Enforces time limits (milliseconds) and memory limits (MB)
-- **Sandboxed Execution**: Runs code in isolated temporary directories
+- **Docker Sandboxing**: Isolated, secure execution environment with no network access
 - **Test Case Evaluation**: Automatically compares output against expected results
 - **Detailed Results**: Returns execution time, memory usage, and error messages for each test case
+
+### Platform Features
+- **User Authentication**: Multi-provider authentication system (email/password, OAuth ready)
+- **Role-Based Access Control**: Four roles (admin, user, author, guest) with flexible permission management
+- **Problem Management**: Create, edit, and manage coding problems with difficulty levels
+- **Approval Workflow**: Problem review system with statuses (pending, approved, rejected, requested changes)
+- **Tagging System**: Categorize problems with custom tags
+- **Statistics Tracking**: Track submissions and acceptance rates per problem
+
+### Developer Experience
 - **Beginner-Friendly**: Extensively documented code with explanations of Go concepts
+- **Database Migrations**: Version-controlled schema with goose
+- **Modular Architecture**: Clean separation of concerns with interface-based design
 
 ## 📋 Table of Contents
 
@@ -29,6 +42,9 @@ A robust, scalable code execution system built in Go that runs user-submitted co
 - Docker (for secure sandboxed execution)
   - Install: https://docs.docker.com/get-docker/
   - Ensure Docker daemon is running
+- PostgreSQL 12 or later
+  - Install: https://www.postgresql.org/download/
+  - Create a database for the application
 
 ### Installation
 
@@ -39,6 +55,12 @@ cd coding_platform
 
 # Install dependencies
 go mod download
+
+# Set up environment variables
+cp .env.example .env  # Create .env file and configure DATABASE_URL
+
+# Run database migrations
+goose -dir db/migrations postgres "your_postgres_connection_string" up
 ```
 
 ### Run the Worker
@@ -109,6 +131,7 @@ The system uses Docker sandboxing with a clean, modular architecture:
 2. **Executor** (`internal/executor/`): Core execution engine that runs code and evaluates results
 3. **Language Runners**: Language-specific implementations (PythonRunner, JavaRunner, etc.)
 4. **Worker** (`cmd/worker/`): CLI tool to run submissions (can be adapted for queues/HTTP)
+5. **Database** (`db/migrations/`): PostgreSQL schema with users, authentication, roles, problems, and tags
 
 ## 🔧 How It Works
 
@@ -329,9 +352,17 @@ runners := make(map[string]LanguageRunner)         // Map
 ```
 coding_platform/
 ├── cmd/
-│   ├── server/          # API server (future)
-│   └── worker/          # Code execution worker (current)
+│   ├── server/          # API server
+│   │   └── main.go      # HTTP server entry point
+│   └── worker/          # Code execution worker
 │       └── main.go      # CLI entry point
+├── db/
+│   └── migrations/      # Database schema migrations (goose)
+│       ├── 20251008050025_users_table.sql
+│       ├── 20251008052918_auth_table.sql
+│       ├── 20251008063249_roles_table.sql
+│       ├── 20251008072927_seed_roles.sql
+│       └── 20251008092839_problems_table.sql
 ├── dockerfiles/         # Docker images for sandboxing
 │   └── python.Dockerfile
 ├── internal/
@@ -345,7 +376,9 @@ coding_platform/
 │   │   └── utils.go            # Helper functions
 │   ├── config/          # Configuration
 │   │   └── config.go
-│   └── routes/          # HTTP routes (for future API)
+│   └── routes/          # HTTP routes
+│       ├── main.go      # Route aggregation
+│       └── auth.go      # Authentication routes
 ├── go.mod
 ├── go.sum
 ├── .env
@@ -371,10 +404,11 @@ If you're new to Go, here are the key concepts to understand:
 - [ ] Integration with message queues (RabbitMQ, Redis)
 - [ ] Distributed execution across multiple workers
 - [ ] Web UI for submitting code
-- [ ] Database integration for storing results
 - [ ] Rate limiting and queue management
 - [ ] Compilation caching for compiled languages
 - [ ] Memory usage tracking within containers
+- [ ] User submission history and leaderboards
+- [ ] Problem difficulty rating and recommendation system
 
 ## 📝 License
 
