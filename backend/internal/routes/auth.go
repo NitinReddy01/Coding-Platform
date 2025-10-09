@@ -1,16 +1,14 @@
 package routes
 
-import "net/http"
+import (
+	"app/internal/handlers"
+	"net/http"
+)
 
 func AuthRoutes() *http.ServeMux {
 	authRouter := http.NewServeMux()
 
-	authRouter.HandleFunc("POST /login", handleLogin)
+	authRouter.HandleFunc("POST /login", handlers.HandleLogin)
 
 	return authRouter
-}
-
-func handleLogin(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("login"))
 }

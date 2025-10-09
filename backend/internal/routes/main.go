@@ -13,6 +13,7 @@ func ApiRoutes() *http.ServeMux {
 	})
 
 	router.Handle("/auth/", http.StripPrefix("/auth", AuthRoutes()))
+	router.Handle("/problems/", http.StripPrefix("/problems", ProblemRoutes()))
 
 	return router
 }

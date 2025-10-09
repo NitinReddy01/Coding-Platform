@@ -14,6 +14,11 @@ package models
 //	    {"input": "5", "expected_output": "10"}
 //	  ]
 //	}
+
+type Languages struct {
+	Language string `json:"language"`
+	Code     string `json:"code"`
+}
 type Submission struct {
 	// Code is the actual source code submitted by the user.
 	// This will be written to a file and executed.
