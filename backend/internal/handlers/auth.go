@@ -19,7 +19,7 @@ var emailRegex = regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]
 func HandleRegister(w http.ResponseWriter, r *http.Request) {
 	var req models.RegisterRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		sendError(w, http.StatusBadRequest, "Invalid request body")
+		lib.JSONError(w, http.StatusBadRequest, "Invalid request body")
 		return
 	}
 
@@ -28,19 +28,19 @@ func HandleRegister(w http.ResponseWriter, r *http.Request) {
 	req.Email = strings.TrimSpace(strings.ToLower(req.Email))
 
 	if req.Name == "" {
-		sendError(w, http.StatusBadRequest, "Name is required")
+		lib.JSONError(w, http.StatusBadRequest, "Name is required")
 		return
 	}
 	if req.Email == "" {
-		sendError(w, http.StatusBadRequest, "Email is required")
+		lib.JSONError(w, http.StatusBadRequest, "Email is required")
 		return
 	}
 	if !emailRegex.MatchString(req.Email) {
-		sendError(w, http.StatusBadRequest, "Invalid email format")
+		lib.JSONError(w, http.StatusBadRequest, "Invalid email format")
 		return
 	}
 	if len(req.Password) < 8 {
-		sendError(w, http.StatusBadRequest, "Password must be at least 8 characters")
+		lib.JSONError(w, http.StatusBadRequest, "Password must be at least 8 characters")
 		return
 	}
 
@@ -58,11 +58,11 @@ func HandleRegister(w http.ResponseWriter, r *http.Request) {
 	exists, err := db.EmailExists(ctx, req.Email)
 	if err != nil {
 		log.Printf("Error checking email existence: %v", err)
-		sendError(w, http.StatusInternalServerError, "Internal server error")
+		lib.JSONError(w, http.StatusInternalServerError, "Internal server error")
 		return
 	}
 	if exists {
-		sendError(w, http.StatusConflict, "Email already registered")
+		lib.JSONError(w, http.StatusConflict, "Email already registered")
 		return
 	}
 
@@ -70,7 +70,7 @@ func HandleRegister(w http.ResponseWriter, r *http.Request) {
 	passwordHash, err := lib.HashPassword(req.Password)
 	if err != nil {
 		log.Printf("Error hashing password: %v", err)
-		sendError(w, http.StatusInternalServerError, "Internal server error")
+		lib.JSONError(w, http.StatusInternalServerError, "Internal server error")
 		return
 	}
 
@@ -78,7 +78,7 @@ func HandleRegister(w http.ResponseWriter, r *http.Request) {
 	user, err := db.CreateUser(ctx, req.Name, req.Email, passwordHash)
 	if err != nil {
 		log.Printf("Error creating user: %v", err)
-		sendError(w, http.StatusInternalServerError, "Failed to create user")
+		lib.JSONError(w, http.StatusInternalServerError, "Failed to create user")
 		return
 	}
 
@@ -86,14 +86,14 @@ func HandleRegister(w http.ResponseWriter, r *http.Request) {
 	accessToken, err := lib.GenerateAccessToken(user.ID, user.Email)
 	if err != nil {
 		log.Printf("Error generating access token: %v", err)
-		sendError(w, http.StatusInternalServerError, "Internal server error")
+		lib.JSONError(w, http.StatusInternalServerError, "Internal server error")
 		return
 	}
 
 	refreshToken, err := lib.GenerateRefreshToken(user.ID)
 	if err != nil {
 		log.Printf("Error generating refresh token: %v", err)
-		sendError(w, http.StatusInternalServerError, "Internal server error")
+		lib.JSONError(w, http.StatusInternalServerError, "Internal server error")
 		return
 	}
 
@@ -105,7 +105,7 @@ func HandleRegister(w http.ResponseWriter, r *http.Request) {
 	err = db.SaveRefreshToken(ctx, user.ID, tokenHash, expiresAt, deviceInfo)
 	if err != nil {
 		log.Printf("Error saving refresh token: %v", err)
-		sendError(w, http.StatusInternalServerError, "Internal server error")
+		lib.JSONError(w, http.StatusInternalServerError, "Internal server error")
 		return
 	}
 
@@ -117,21 +117,21 @@ func HandleRegister(w http.ResponseWriter, r *http.Request) {
 		User:        *user,
 		AccessToken: accessToken,
 	}
-	sendJSON(w, http.StatusCreated, response)
+	lib.JSON(w, http.StatusCreated, response)
 }
 
 // HandleLogin handles user login with email and password
 func HandleLogin(w http.ResponseWriter, r *http.Request) {
 	var req models.LoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		sendError(w, http.StatusBadRequest, "Invalid request body")
+		lib.JSONError(w, http.StatusBadRequest, "Invalid request body")
 		return
 	}
 
 	// Validate inputs
 	req.Email = strings.TrimSpace(strings.ToLower(req.Email))
 	if req.Email == "" || req.Password == "" {
-		sendError(w, http.StatusBadRequest, "Email and password are required")
+		lib.JSONError(w, http.StatusBadRequest, "Email and password are required")
 		return
 	}
 
@@ -141,19 +141,19 @@ func HandleLogin(w http.ResponseWriter, r *http.Request) {
 	user, auth, err := db.GetUserByEmail(ctx, req.Email)
 	if err != nil {
 		// Don't reveal whether email exists for security
-		sendError(w, http.StatusUnauthorized, "Invalid email or password")
+		lib.JSONError(w, http.StatusUnauthorized, "Invalid email or password")
 		return
 	}
 
 	// Check if user is active
 	if !user.IsActive {
-		sendError(w, http.StatusForbidden, "Account is disabled")
+		lib.JSONError(w, http.StatusForbidden, "Account is disabled")
 		return
 	}
 
 	// Compare passwords
 	if !lib.ComparePassword(auth.PasswordHash, req.Password) {
-		sendError(w, http.StatusUnauthorized, "Invalid email or password")
+		lib.JSONError(w, http.StatusUnauthorized, "Invalid email or password")
 		return
 	}
 
@@ -168,14 +168,14 @@ func HandleLogin(w http.ResponseWriter, r *http.Request) {
 	accessToken, err := lib.GenerateAccessToken(user.ID, user.Email)
 	if err != nil {
 		log.Printf("Error generating access token: %v", err)
-		sendError(w, http.StatusInternalServerError, "Internal server error")
+		lib.JSONError(w, http.StatusInternalServerError, "Internal server error")
 		return
 	}
 
 	refreshToken, err := lib.GenerateRefreshToken(user.ID)
 	if err != nil {
 		log.Printf("Error generating refresh token: %v", err)
-		sendError(w, http.StatusInternalServerError, "Internal server error")
+		lib.JSONError(w, http.StatusInternalServerError, "Internal server error")
 		return
 	}
 
@@ -187,7 +187,7 @@ func HandleLogin(w http.ResponseWriter, r *http.Request) {
 	err = db.SaveRefreshToken(ctx, user.ID, tokenHash, expiresAt, deviceInfo)
 	if err != nil {
 		log.Printf("Error saving refresh token: %v", err)
-		sendError(w, http.StatusInternalServerError, "Internal server error")
+		lib.JSONError(w, http.StatusInternalServerError, "Internal server error")
 		return
 	}
 
@@ -199,7 +199,7 @@ func HandleLogin(w http.ResponseWriter, r *http.Request) {
 		User:        *user,
 		AccessToken: accessToken,
 	}
-	sendJSON(w, http.StatusOK, response)
+	lib.JSON(w, http.StatusOK, response)
 }
 
 // HandleRefresh handles access token refresh using refresh token from cookie
@@ -207,20 +207,20 @@ func HandleRefresh(w http.ResponseWriter, r *http.Request) {
 	// Get refresh token from cookie
 	cookie, err := r.Cookie("refresh_token")
 	if err != nil {
-		sendError(w, http.StatusUnauthorized, "Refresh token not found")
+		lib.JSONError(w, http.StatusUnauthorized, "Refresh token not found")
 		return
 	}
 
 	refreshToken := cookie.Value
 	if refreshToken == "" {
-		sendError(w, http.StatusUnauthorized, "Refresh token not found")
+		lib.JSONError(w, http.StatusUnauthorized, "Refresh token not found")
 		return
 	}
 
 	// Validate JWT signature and expiry
 	claims, err := lib.ValidateRefreshToken(refreshToken)
 	if err != nil {
-		sendError(w, http.StatusUnauthorized, "Invalid or expired refresh token")
+		lib.JSONError(w, http.StatusUnauthorized, "Invalid or expired refresh token")
 		return
 	}
 
@@ -230,19 +230,19 @@ func HandleRefresh(w http.ResponseWriter, r *http.Request) {
 	tokenHash := lib.HashToken(refreshToken)
 	user, err := db.ValidateRefreshToken(ctx, tokenHash)
 	if err != nil {
-		sendError(w, http.StatusUnauthorized, "Invalid or expired refresh token")
+		lib.JSONError(w, http.StatusUnauthorized, "Invalid or expired refresh token")
 		return
 	}
 
 	// Verify user ID matches
 	if user.ID != claims.UserID {
-		sendError(w, http.StatusUnauthorized, "Invalid refresh token")
+		lib.JSONError(w, http.StatusUnauthorized, "Invalid refresh token")
 		return
 	}
 
 	// Check if user is active
 	if !user.IsActive {
-		sendError(w, http.StatusForbidden, "Account is disabled")
+		lib.JSONError(w, http.StatusForbidden, "Account is disabled")
 		return
 	}
 
@@ -250,7 +250,7 @@ func HandleRefresh(w http.ResponseWriter, r *http.Request) {
 	accessToken, err := lib.GenerateAccessToken(user.ID, user.Email)
 	if err != nil {
 		log.Printf("Error generating access token: %v", err)
-		sendError(w, http.StatusInternalServerError, "Internal server error")
+		lib.JSONError(w, http.StatusInternalServerError, "Internal server error")
 		return
 	}
 
@@ -258,7 +258,7 @@ func HandleRefresh(w http.ResponseWriter, r *http.Request) {
 	response := models.RefreshResponse{
 		AccessToken: accessToken,
 	}
-	sendJSON(w, http.StatusOK, response)
+	lib.JSON(w, http.StatusOK, response)
 }
 
 // HandleLogout handles user logout by revoking the refresh token
@@ -310,20 +310,4 @@ func clearRefreshTokenCookie(w http.ResponseWriter) {
 		SameSite: http.SameSiteLaxMode,
 	}
 	http.SetCookie(w, cookie)
-}
-
-// Helper function to send JSON response
-func sendJSON(w http.ResponseWriter, statusCode int, data interface{}) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(statusCode)
-	if err := json.NewEncoder(w).Encode(data); err != nil {
-		log.Printf("Error encoding JSON response: %v", err)
-	}
-}
-
-// Helper function to send error response
-func sendError(w http.ResponseWriter, statusCode int, message string) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(statusCode)
-	json.NewEncoder(w).Encode(models.ErrorResponse{Message: message})
 }

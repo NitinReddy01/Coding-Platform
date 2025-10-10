@@ -15,6 +15,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import type { TypedUseSelectorHook } from 'react-redux';
 import editorReducer from './slices/editorSlice';
 import authReducer from './slices/authSlice';
+import problemsReducer from './slices/problemsSlice';
 
 /**
  * Global Redux store
@@ -33,6 +34,7 @@ export const store = configureStore({
   reducer: {
     editor: editorReducer,
     auth: authReducer,
+    problems: problemsReducer,
   },
 });
 

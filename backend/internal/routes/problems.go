@@ -8,9 +8,9 @@ import (
 func ProblemRoutes() *http.ServeMux {
 	router := http.NewServeMux()
 
-	router.HandleFunc("GET /languages", handlers.GetLanguages)
-	router.HandleFunc("POST /as", handlers.AddProblem)
+	router.HandleFunc("POST /", handlers.AddProblem)
 	router.HandleFunc("GET /{title}", handlers.GetProblem)
+	router.HandleFunc("GET /languages", handlers.GetLanguages)
 
 	return router
 }
