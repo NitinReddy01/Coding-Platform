@@ -11,39 +11,44 @@ import (
 	"strings"
 )
 
-func GetLanguages(res http.ResponseWriter, req *http.Request) {
-	lib.JSON(res, http.StatusOK, lib.Languages)
+func GetLanguages(w http.ResponseWriter, r *http.Request) {
+	lib.JSON(w, http.StatusOK, lib.Languages)
 }
 
-func GetProblem(res http.ResponseWriter, req *http.Request) {
-	title := strings.TrimSpace(req.PathValue("title"))
-	fmt.Print(title)
+func GetProblem(w http.ResponseWriter, r *http.Request) {
+	title := strings.TrimSpace(r.PathValue("title"))
 	if title == "" {
-		lib.JSONError(res, http.StatusBadRequest, "Invalid Problem Id")
+		lib.JSONError(w, http.StatusBadRequest, "Invalid Problem Id")
 		return
 	}
-	query := "select * from problems where title =$1"
+	var problem models.Problem
+	query := "SELECT p.id,p.title,p.description,p.difficulty,p.accepted,p.submissions,p.constraints FROM problems p,test_cases t WHERE p.status = $1"
 	row := db.Pool.QueryRow(context.Background(), query, title)
-	fmt.Print(row)
-
+	err := row.Scan(&problem.ID)
+	if err != nil {
+		fmt.Print(err)
+	}
+	lib.JSON(w, http.StatusOK, map[string]any{
+		"problem": problem,
+	})
 }
 
-func AddProblem(res http.ResponseWriter, req *http.Request) {
+func AddProblem(w http.ResponseWriter, r *http.Request) {
 	var problemData models.ProblemInput
-	defer req.Body.Close()
-	decoder := json.NewDecoder(req.Body)
+	defer r.Body.Close()
+	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields()
 	err := decoder.Decode(&problemData)
 	if err != nil {
-		lib.JSONError(res, http.StatusBadRequest, "Invalid Data")
+		lib.JSONError(w, http.StatusBadRequest, "Invalid Data")
 		return
 	}
 	if !problemData.Difficulty.IsValid() {
-		lib.JSONError(res, http.StatusBadRequest, "Invalid problem difficulty ")
+		lib.JSONError(w, http.StatusBadRequest, "Invalid problem difficulty ")
 		return
 	}
 	if problemData.Status != models.Pending {
-		lib.JSONError(res, http.StatusBadRequest, "Invalid status")
+		lib.JSONError(w, http.StatusBadRequest, "Invalid status")
 		return
 	}
 
@@ -53,9 +58,11 @@ func AddProblem(res http.ResponseWriter, req *http.Request) {
 
 	if queryErr != nil {
 		fmt.Print(queryErr)
-		lib.JSONError(res, http.StatusInternalServerError, "Internal Error")
+		lib.JSONError(w, http.StatusInternalServerError, "Internal Error")
 		return
 	}
 
-	lib.JSON(res, http.StatusCreated, "Problem Added")
+	lib.JSON(w, http.StatusCreated, map[string]any{
+		"message": "Problem Added",
+	})
 }

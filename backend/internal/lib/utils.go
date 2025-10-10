@@ -5,25 +5,25 @@ import (
 	"net/http"
 )
 
-func JSON(res http.ResponseWriter, status int, data interface{}) {
-	res.Header().Set("Content-Type", "application/json")
-	res.WriteHeader(status)
+func JSON(w http.ResponseWriter, status int, data interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
 
 	if data == nil {
 		return
 	}
 
-	err := json.NewEncoder(res).Encode(data)
+	err := json.NewEncoder(w).Encode(data)
 	if err != nil {
-		JSONError(res, http.StatusInternalServerError, "Something went wrong")
+		JSONError(w, http.StatusInternalServerError, "Something went wrong")
 	}
 }
 
-func JSONError(res http.ResponseWriter, status int, message string) {
-	res.Header().Set("Content-Type", "application/json")
-	res.WriteHeader(status)
+func JSONError(w http.ResponseWriter, status int, message string) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
 
-	json.NewEncoder(res).Encode(map[string]string{
+	json.NewEncoder(w).Encode(map[string]string{
 		"error": message,
 	})
 }

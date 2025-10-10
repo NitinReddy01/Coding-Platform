@@ -9,6 +9,7 @@
 
 import { useEffect, useState } from 'react';
 import { fetchProblem } from '../api/problems';
+import { useAxiosPrivate } from './useAxiosPrivate';
 import { mockProblem } from '../constants/mockData';
 import type { Problem } from '../types';
 
@@ -33,6 +34,7 @@ import type { Problem } from '../types';
  * ```
  */
 export const useProblem = (problemId: string, useMock = true) => {
+  const axiosPrivate = useAxiosPrivate();
   const [problem, setProblem] = useState<Problem | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -52,7 +54,7 @@ export const useProblem = (problemId: string, useMock = true) => {
         await new Promise((resolve) => setTimeout(resolve, 500));
         setProblem(mockProblem);
       } else {
-        const data = await fetchProblem(id);
+        const data = await fetchProblem(axiosPrivate, id);
         setProblem(data);
       }
     } catch (err) {

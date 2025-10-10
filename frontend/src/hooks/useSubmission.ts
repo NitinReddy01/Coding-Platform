@@ -8,6 +8,7 @@
 
 import { useState } from 'react';
 import { runCode, submitCode } from '../api/submissions';
+import { useAxiosPrivate } from './useAxiosPrivate';
 import type { Submission, ExecutionResult } from '../types';
 
 /**
@@ -30,6 +31,7 @@ import type { Submission, ExecutionResult } from '../types';
  * ```
  */
 export const useSubmission = (useMock = true) => {
+  const axiosPrivate = useAxiosPrivate();
   const [results, setResults] = useState<ExecutionResult[]>([]);
   const [isRunning, setIsRunning] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -61,7 +63,7 @@ export const useSubmission = (useMock = true) => {
 
         setResults(mockResults);
       } else {
-        const response = await runCode(submission);
+        const response = await runCode(axiosPrivate, submission);
         setResults(response.results);
       }
     } catch (err) {
@@ -98,7 +100,7 @@ export const useSubmission = (useMock = true) => {
 
         setResults(mockResults);
       } else {
-        const response = await submitCode(submission);
+        const response = await submitCode(axiosPrivate, submission);
         setResults(response.results);
       }
     } catch (err) {

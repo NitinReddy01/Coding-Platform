@@ -14,12 +14,14 @@ import { configureStore } from '@reduxjs/toolkit';
 import { useDispatch, useSelector } from 'react-redux';
 import type { TypedUseSelectorHook } from 'react-redux';
 import editorReducer from './slices/editorSlice';
+import authReducer from './slices/authSlice';
 
 /**
  * Global Redux store
  *
- * Contains only the editor slice for global editor settings:
+ * Contains global state slices:
  * - `editor`: Code editor state (code, language, theme, font size)
+ * - `auth`: Authentication state (access token, user, isAuthenticated)
  *
  * Note: Problem and submission state are managed locally in their
  * respective hooks (useProblem, useSubmission) as they don't need
@@ -30,6 +32,7 @@ import editorReducer from './slices/editorSlice';
 export const store = configureStore({
   reducer: {
     editor: editorReducer,
+    auth: authReducer,
   },
 });
 
