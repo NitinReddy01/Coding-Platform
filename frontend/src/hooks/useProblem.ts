@@ -11,7 +11,7 @@ import { useEffect, useState } from 'react';
 import { fetchProblem } from '../api/problems';
 import { useAxiosPrivate } from './useAxiosPrivate';
 import { mockProblem } from '../constants/mockData';
-import type { Problem } from '../types';
+import type { Problem, ProblemMode } from '../types';
 
 /**
  * Hook for fetching and accessing problem data
@@ -33,7 +33,7 @@ import type { Problem } from '../types';
  * }
  * ```
  */
-export const useProblem = (problemId: string, useMock = true) => {
+export const useProblem = (problemId: string,mode:ProblemMode) => {
   const axiosPrivate = useAxiosPrivate();
   const [problem, setProblem] = useState<Problem | null>(null);
   const [loading, setLoading] = useState(false);
@@ -49,14 +49,8 @@ export const useProblem = (problemId: string, useMock = true) => {
     setError(null);
 
     try {
-      if (useMock) {
-        // Simulate API delay
-        await new Promise((resolve) => setTimeout(resolve, 500));
-        setProblem(mockProblem);
-      } else {
-        const data = await fetchProblem(axiosPrivate, id);
+        const data = await fetchProblem(axiosPrivate, id,mode);
         setProblem(data);
-      }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load problem';
       setError(message);

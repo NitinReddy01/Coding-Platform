@@ -16,6 +16,8 @@ import type { TypedUseSelectorHook } from 'react-redux';
 import editorReducer from './slices/editorSlice';
 import authReducer from './slices/authSlice';
 import problemsReducer from './slices/problemsSlice';
+import submissionsReducer from './slices/submissionsSlice';
+import userReducer from './slices/userSlice';
 
 /**
  * Global Redux store
@@ -35,6 +37,8 @@ export const store = configureStore({
     editor: editorReducer,
     auth: authReducer,
     problems: problemsReducer,
+    submissions: submissionsReducer,
+    user: userReducer,
   },
 });
 

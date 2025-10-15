@@ -1,11 +1,10 @@
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../store/store';
 import { setCode } from '../store/slices/editorSlice';
 import { useProblem } from '../hooks/useProblem';
 import { useSubmission } from '../hooks/useSubmission';
 import { ProblemLayout } from '../components/layout/ProblemLayout';
-import { getDefaultCode } from '../constants/languages';
 import type { Submission } from '../types';
 
 export function ProblemPage() {
@@ -13,18 +12,20 @@ export function ProblemPage() {
   const dispatch = useAppDispatch();
 
   // Hooks now manage their own state locally
-  const { problem, loading, error } = useProblem(id || '1', true);
+  const { problem, loading, error } = useProblem("Two Sum", 'practice');
   const { results, isRunning, isSubmitting, error: submissionError, runCode, submitCode } = useSubmission(true);
-  const { code, language } = useAppSelector((state) => state.editor);
-
+  const { code, language, languages } = useAppSelector((state) => state.editor);
   // Set default code when component mounts or language changes
   useEffect(() => {
-    if (!code) {
-      dispatch(setCode(getDefaultCode(language)));
+    if (!code && languages.length > 0) {
+      const selectedLanguage = languages.find((lang) => lang.code === language);
+      if (selectedLanguage) {
+        dispatch(setCode(selectedLanguage.default_code));
+      }
     }
-  }, [language]);
+  }, [language, languages, code, dispatch]);
 
-  const handleRun = () => {
+  const handleRun = useCallback(() => {
     if (!problem || !code.trim()) return;
 
     const submission: Submission = {
@@ -36,9 +37,9 @@ export function ProblemPage() {
     };
 
     runCode(submission);
-  };
+  }, [problem, code, language, runCode]);
 
-  const handleSubmit = () => {
+  const handleSubmit = useCallback(() => {
     if (!problem || !code.trim()) return;
 
     const submission: Submission = {
@@ -50,7 +51,7 @@ export function ProblemPage() {
     };
 
     submitCode(submission);
-  };
+  }, [problem, code, language, submitCode]);
 
   if (loading) {
     return (

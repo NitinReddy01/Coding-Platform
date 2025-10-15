@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 
+import { Navbar } from './Navbar';
 import { ProblemDescription } from '../problem/ProblemDescription';
 import { CodeEditor } from '../editor/CodeEditor';
 import { EditorToolbar } from '../editor/EditorToolbar';
@@ -59,26 +60,24 @@ export function ProblemLayout({ problem, onRun, onSubmit, results, isRunning, is
   return (
     <div className="flex h-screen flex-col">
       {/* Navbar */}
-      <div className="flex h-14 items-center justify-between border-b border-border px-4">
-        <h1 className="text-lg font-semibold">CodeForge</h1>
+      <Navbar />
 
-        {/* Mobile Navigation Tabs */}
-        <div className="md:hidden flex gap-2">
-          <Button
-            variant={mobileTab === 'problem' ? 'default' : 'ghost'}
-            size="sm"
-            onClick={() => setMobileTab('problem')}
-          >
-            Problem
-          </Button>
-          <Button
-            variant={mobileTab === 'editor' ? 'default' : 'ghost'}
-            size="sm"
-            onClick={() => setMobileTab('editor')}
-          >
-            Editor
-          </Button>
-        </div>
+      {/* Mobile Navigation Tabs */}
+      <div className="md:hidden flex gap-2 border-b border-border px-4 py-2 bg-card">
+        <Button
+          variant={mobileTab === 'problem' ? 'default' : 'ghost'}
+          size="sm"
+          onClick={() => setMobileTab('problem')}
+        >
+          Problem
+        </Button>
+        <Button
+          variant={mobileTab === 'editor' ? 'default' : 'ghost'}
+          size="sm"
+          onClick={() => setMobileTab('editor')}
+        >
+          Editor
+        </Button>
       </div>
 
       {/* Desktop Layout */}

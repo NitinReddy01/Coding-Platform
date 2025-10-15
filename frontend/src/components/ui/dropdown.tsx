@@ -145,30 +145,38 @@ export function Select({
     <div ref={dropdownRef} className={cn('relative', className)}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between gap-2 px-3 py-2 bg-muted border border-border rounded-md text-sm text-text hover:bg-card transition-colors"
+        className={cn(
+          'w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm transition-smooth',
+          'bg-muted/50 border border-border text-foreground',
+          'hover:bg-card hover:border-primary/30',
+          'focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary',
+          isOpen && 'ring-2 ring-primary/50 border-primary bg-card'
+        )}
         type="button"
       >
-        <span>{selectedOption?.label || placeholder}</span>
+        <span className={selectedOption ? 'text-foreground' : 'text-muted-foreground'}>
+          {selectedOption?.label || placeholder}
+        </span>
         <ChevronDown
           className={cn(
-            'w-4 h-4 transition-transform',
-            isOpen && 'transform rotate-180'
+            'w-4 h-4 transition-transform text-muted-foreground',
+            isOpen && 'transform rotate-180 text-primary'
           )}
         />
       </button>
 
       {isOpen && (
-        <div className="absolute z-50 mt-1 w-full rounded-md bg-card border border-border shadow-lg max-h-60 overflow-auto">
+        <div className="absolute z-50 mt-2 w-full rounded-lg bg-gradient-card border border-primary/20 shadow-card max-h-60 overflow-auto">
           <div className="py-1">
             {options.map((option) => (
               <button
                 key={option.value}
                 onClick={() => handleSelect(option.value)}
                 className={cn(
-                  'w-full px-3 py-2 text-left text-sm transition-colors',
+                  'w-full px-3 py-2 text-left text-sm transition-smooth',
                   option.value === value
-                    ? 'bg-primary/10 text-primary'
-                    : 'text-text hover:bg-muted'
+                    ? 'bg-primary/20 text-primary font-medium'
+                    : 'text-foreground hover:bg-muted/50 hover:text-primary'
                 )}
                 type="button"
               >

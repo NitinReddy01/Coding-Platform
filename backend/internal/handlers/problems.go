@@ -15,19 +15,47 @@ func GetLanguages(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetProblem(w http.ResponseWriter, r *http.Request) {
+
 	title := strings.TrimSpace(r.PathValue("title"))
 	if title == "" {
 		lib.JSONError(w, http.StatusBadRequest, "Invalid Problem Id")
 		return
 	}
-	var problem models.Problem
-	db.GetProblem(r.Context(), title, true)
-	// query := "SELECT p.id,p.title,p.description,p.difficulty,p.accepted,p.submissions,p.constraints FROM problems p,test_cases t WHERE p.status = $1"
-	// row := db.Pool.QueryRow(context.Background(), query, title)
-	// err := row.Scan(&problem.ID)
-	// if err != nil {
-	// 	fmt.Print(err)
-	// }
+
+	query := r.URL.Query()
+	mode := query.Get("mode")
+
+	if mode == "" || strings.TrimSpace(mode) == "" {
+		lib.JSONError(w, http.StatusBadRequest, "Invalid Mode")
+		return
+	}
+	problemMode := models.ProblemMode(mode)
+
+	if !problemMode.IsValid() {
+		lib.JSONError(w, http.StatusBadRequest, "Invalid Mode")
+		return
+	}
+	ctx := r.Context()
+
+	if problemMode == models.Edit {
+		problem, err := db.GetProblemForAdmin(ctx, title, false)
+		if err != nil {
+			lib.JSONError(w, http.StatusInternalServerError, "Internal Server Error")
+			return
+		}
+		lib.JSON(w, http.StatusOK, map[string]any{
+			"problem": problem,
+		})
+		return
+	}
+
+	problem, err := db.GetProblem(ctx, title, false)
+
+	if err != nil {
+		lib.JSONError(w, http.StatusInternalServerError, "Internal Server Error")
+		return
+	}
+
 	lib.JSON(w, http.StatusOK, map[string]any{
 		"problem": problem,
 	})

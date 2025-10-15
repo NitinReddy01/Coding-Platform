@@ -9,6 +9,7 @@
 
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
+import type { Language } from '../../types';
 
 /**
  * State shape for the editor slice
@@ -22,18 +23,27 @@ interface EditorState {
   fontSize: number;
   /** Monaco editor theme */
   theme: 'vs-dark' | 'light';
+  /** Available programming languages fetched from backend */
+  languages: Language[];
+  /** Loading state for language fetching */
+  languagesLoading: boolean;
+  /** Error message if language fetching failed */
+  languagesError: string | null;
 }
 
 /**
  * Initial state for the editor slice
  *
- * Defaults: Python, dark theme, 14px font, empty code
+ * Defaults: Python, dark theme, 14px font, empty code, no languages loaded
  */
 const initialState: EditorState = {
   code: '',
   language: 'python',
   fontSize: 14,
   theme: 'vs-dark',
+  languages: [],
+  languagesLoading: false,
+  languagesError: null,
 };
 
 /**
@@ -88,6 +98,27 @@ const editorSlice = createSlice({
       state.fontSize = 14;
       state.theme = 'vs-dark';
     },
+    /**
+     * Sets the loading state for language fetching
+     */
+    setLanguagesLoading: (state, action: PayloadAction<boolean>) => {
+      state.languagesLoading = action.payload;
+    },
+    /**
+     * Stores the fetched languages array
+     */
+    setLanguages: (state, action: PayloadAction<Language[]>) => {
+      state.languages = action.payload;
+      state.languagesLoading = false;
+      state.languagesError = null;
+    },
+    /**
+     * Sets an error message if language fetching failed
+     */
+    setLanguagesError: (state, action: PayloadAction<string>) => {
+      state.languagesError = action.payload;
+      state.languagesLoading = false;
+    },
   },
 });
 
@@ -97,6 +128,9 @@ export const {
   setFontSize,
   setTheme,
   resetEditor,
+  setLanguagesLoading,
+  setLanguages,
+  setLanguagesError,
 } = editorSlice.actions;
 
 export default editorSlice.reducer;

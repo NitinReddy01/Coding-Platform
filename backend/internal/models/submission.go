@@ -16,8 +16,10 @@ package models
 //	}
 
 type Languages struct {
-	Language string `json:"language"`
-	Code     string `json:"code"`
+	Language    string `json:"language"`     // Display name (e.g., "Python 3.11")
+	Code        string `json:"code"`         // Language identifier (e.g., "python")
+	MonacoId    string `json:"monaco_id"`    // Monaco editor language ID for syntax highlighting
+	DefaultCode string `json:"default_code"` // Default starter code template
 }
 type Submission struct {
 	// Code is the actual source code submitted by the user.

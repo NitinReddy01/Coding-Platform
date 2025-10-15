@@ -1,6 +1,9 @@
-import { LayoutDashboard } from 'lucide-react';
+import { LayoutDashboard, Activity, Lightbulb, Trophy } from 'lucide-react';
 import { Navbar } from '../components/layout/Navbar';
 import { Footer } from '../components/layout/Footer';
+import { ActivityFeed } from '../components/dashboard/ActivityFeed';
+import { RecommendedProblems } from '../components/dashboard/RecommendedProblems';
+import { UpcomingContests } from '../components/dashboard/UpcomingContests';
 
 export function DashboardPage() {
   return (
@@ -90,19 +93,54 @@ export function DashboardPage() {
           </div>
         </div>
 
-        {/* Under Construction Banner with Gradient */}
-        <div className="mt-8 bg-gradient-card border border-primary/20 rounded-xl p-8 shadow-card text-center relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-success/5" />
-          <div className="relative">
-            <div className="inline-block p-4 rounded-full bg-gradient-primary mb-4">
-              <span className="text-4xl">🚧</span>
+        {/* Main Content Grid */}
+        <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left Column - Activity Feed (2 columns on large screens) */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Recent Activity Section */}
+            <div className="bg-gradient-card border border-border rounded-xl shadow-card border-gradient-l-primary overflow-hidden">
+              <div className="px-6 py-4 border-b border-border bg-gradient-to-r from-primary/5 via-transparent to-primary/5">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-primary/20">
+                    <Activity className="w-5 h-5 text-primary" />
+                  </div>
+                  <h2 className="text-lg font-semibold text-foreground">Recent Activity</h2>
+                </div>
+              </div>
+              <div className="p-6">
+                <ActivityFeed />
+              </div>
             </div>
-            <p className="text-xl font-semibold text-gradient-primary mb-2">
-              Dashboard Under Construction
-            </p>
-            <p className="text-muted-foreground">
-              More exciting features coming soon! Stay tuned for activity feed, progress charts, and personalized recommendations.
-            </p>
+
+            {/* Recommended Problems Section */}
+            <div className="bg-gradient-card border border-border rounded-xl shadow-card border-gradient-l-success overflow-hidden">
+              <div className="px-6 py-4 border-b border-border bg-gradient-to-r from-success/5 via-transparent to-success/5">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-success/20">
+                    <Lightbulb className="w-5 h-5 text-success" />
+                  </div>
+                  <h2 className="text-lg font-semibold text-foreground">Recommended For You</h2>
+                </div>
+              </div>
+              <div className="p-6">
+                <RecommendedProblems />
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column - Upcoming Contest */}
+          <div className="lg:col-span-1">
+            <div className="sticky top-24">
+              <div className="mb-4">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="p-2 rounded-lg bg-warning/20">
+                    <Trophy className="w-5 h-5 text-warning" />
+                  </div>
+                  <h2 className="text-lg font-semibold text-foreground">Upcoming Contest</h2>
+                </div>
+              </div>
+              <UpcomingContests />
+            </div>
           </div>
         </div>
       </main>

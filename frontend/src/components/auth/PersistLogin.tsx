@@ -13,7 +13,10 @@ import { useEffect, useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { useRefreshToken } from '../../hooks/useRefreshToken';
 import { useAuth } from '../../hooks/useAuth';
-import { useAppSelector } from '../../store/store';
+import { useAppSelector, useAppDispatch } from '../../store/store';
+import { setLanguages, setLanguagesLoading, setLanguagesError } from '../../store/slices/editorSlice';
+import { fetchLanguages } from '../../api/problems';
+import { useAxiosPrivate } from '../../hooks/useAxiosPrivate';
 
 /**
  * Persist login wrapper
@@ -47,6 +50,9 @@ export const PersistLogin: React.FC = () => {
   const refresh = useRefreshToken();
   const { user, persist } = useAuth();
   const { accessToken } = useAppSelector((state) => state.auth);
+  const { languages } = useAppSelector((state) => state.editor);
+  const dispatch = useAppDispatch();
+  const axios = useAxiosPrivate();
 
   useEffect(() => {
     let isMounted = true;
@@ -85,6 +91,28 @@ export const PersistLogin: React.FC = () => {
       isMounted = false;
     };
   }, [user, persist, accessToken, refresh]);
+
+  /**
+   * Fetch languages when user is authenticated and languages haven't been loaded
+   */
+  useEffect(() => {
+    const loadLanguages = async () => {
+      // Only fetch if user is authenticated and languages haven't been loaded
+      if (!accessToken || languages.length > 0) return;
+
+      try {
+        dispatch(setLanguagesLoading(true));
+        const fetchedLanguages = await fetchLanguages(axios);
+        dispatch(setLanguages(fetchedLanguages));
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Failed to load languages';
+        dispatch(setLanguagesError(message));
+        console.error('Failed to fetch languages:', error);
+      }
+    };
+
+    loadLanguages();
+  }, [accessToken, languages.length, axios, dispatch]);
 
   // Show loading state while refreshing token
   if (isLoading) {

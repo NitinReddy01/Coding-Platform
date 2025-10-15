@@ -8,7 +8,7 @@
  */
 
 import type { AxiosInstance } from 'axios';
-import type { Problem } from '../types';
+import type { Language, Problem, ProblemMode } from '../types';
 
 /**
  * Fetches a single problem by its ID
@@ -27,10 +27,11 @@ import type { Problem } from '../types';
  */
 export const fetchProblem = async (
   axiosInstance: AxiosInstance,
-  id: string
+  id: string,
+  mode:ProblemMode
 ): Promise<Problem> => {
-  const response = await axiosInstance.get<Problem>(`/problems/${id}`);
-  return response.data;
+  const response = await axiosInstance.get<{problem:Problem}>(`/problems/${id}?mode=${mode}`);
+  return response.data.problem;
 };
 
 /**
@@ -71,3 +72,8 @@ export const fetchProblems = async (
   });
   return response.data;
 };
+
+export const fetchLanguages = async (axios:AxiosInstance,): Promise<Language[]> =>  {
+  const response = await axios.get<Language[]>('/problems/languages');
+  return response.data;
+}

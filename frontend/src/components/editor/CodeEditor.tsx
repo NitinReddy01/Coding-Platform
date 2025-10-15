@@ -1,14 +1,13 @@
 import Editor from '@monaco-editor/react';
 import { useAppSelector, useAppDispatch } from '../../store/store';
 import { setCode } from '../../store/slices/editorSlice';
-import { getLanguageById } from '../../constants/languages';
 
 export function CodeEditor() {
   const dispatch = useAppDispatch();
-  const { code, language, fontSize, theme } = useAppSelector((state) => state.editor);
+  const { code, language, fontSize, theme, languages } = useAppSelector((state) => state.editor);
 
-  const languageConfig = getLanguageById(language);
-  const monacoLanguage = languageConfig?.monacoId || 'python';
+  const languageConfig = languages.find((lang) => lang.code === language);
+  const monacoLanguage = languageConfig?.monaco_id || 'python';
 
   const handleEditorChange = (value: string | undefined) => {
     dispatch(setCode(value || ''));

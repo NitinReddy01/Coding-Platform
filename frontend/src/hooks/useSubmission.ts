@@ -6,7 +6,7 @@
  * @module hooks/useSubmission
  */
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { runCode, submitCode } from '../api/submissions';
 import { useAxiosPrivate } from './useAxiosPrivate';
 import type { Submission, ExecutionResult } from '../types';
@@ -40,7 +40,7 @@ export const useSubmission = (useMock = true) => {
   /**
    * Runs code against sample test cases
    */
-  const handleRunCode = async (submission: Submission) => {
+  const handleRunCode = useCallback(async (submission: Submission) => {
     setIsRunning(true);
     setError(null);
 
@@ -72,12 +72,12 @@ export const useSubmission = (useMock = true) => {
     } finally {
       setIsRunning(false);
     }
-  };
+  }, [useMock, axiosPrivate]);
 
   /**
    * Submits code for official evaluation
    */
-  const handleSubmitCode = async (submission: Submission) => {
+  const handleSubmitCode = useCallback(async (submission: Submission) => {
     setIsSubmitting(true);
     setError(null);
 
@@ -109,7 +109,7 @@ export const useSubmission = (useMock = true) => {
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [useMock, axiosPrivate]);
 
   return {
     /** Array of test case execution results */

@@ -5,6 +5,8 @@ import { store } from './store/store';
 import { DashboardPage } from './pages/DashboardPage';
 import { ProblemPage } from './pages/ProblemPage';
 import { ProblemsListPage } from './pages/ProblemsListPage';
+import { SubmissionsHistoryPage } from './pages/SubmissionsHistoryPage';
+import { ProfilePage } from './pages/ProfilePage';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { GoogleCallbackPage } from './pages/GoogleCallbackPage';
@@ -26,6 +28,8 @@ function AppRoutes() {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/problems" element={<ProblemsListPage />} />
           <Route path="/problems/:id" element={<ProblemPage />} />
+          <Route path="/submissions" element={<SubmissionsHistoryPage />} />
+          <Route path="/profile/:username" element={<ProfilePage />} />
           {/* Add more protected routes here in the future */}
         </Route>
 

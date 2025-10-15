@@ -57,6 +57,8 @@ export interface Problem {
   sample_test_cases: TestCase[];
 }
 
+export type ProblemMode = 'contest' | 'edit' | 'practice'
+
 /**
  * A single test case with input and expected output
  */
@@ -65,4 +67,18 @@ export interface TestCase {
   input: string;
   /** Expected output string from the solution */
   expected_output: string;
+}
+
+/**
+ * Programming language configuration
+ */
+export interface Language {
+  /** Language identifier (e.g., 'python', 'java', 'cpp') */
+  code: string;
+  /** Display name (e.g., 'Python 3.11', 'Java 17') */
+  language: string;
+  /** Monaco editor language ID for syntax highlighting */
+  monaco_id: string;
+  /** Default starter code template */
+  default_code: string;
 }
