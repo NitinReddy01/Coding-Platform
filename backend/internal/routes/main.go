@@ -19,12 +19,19 @@ func New(allowedOrigins []string) *chi.Mux {
 			return middlewares.CORSMiddleware(next, allowedOrigins)
 		})
 
-		r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
-			lib.JSON(w, http.StatusOK, map[string]string{"health": "ok"})
+		r.Group(func(public chi.Router) {
+			public.Get("/health", func(w http.ResponseWriter, r *http.Request) {
+				lib.JSON(w, http.StatusOK, map[string]string{"health": "ok"})
+			})
+
+			public.Mount("/auth", auth.AuthRoutes())
 		})
 
-		r.Mount("/auth", auth.AuthRoutes())
-		r.Mount("/problems", problems.ProblemRoutes())
+		r.Group(func(private chi.Router) {
+			private.Use(middlewares.AuthMiddleware)
+
+			private.Mount("/problems", problems.ProblemRoutes())
+		})
 	})
 
 	return r
