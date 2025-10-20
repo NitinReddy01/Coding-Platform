@@ -9,6 +9,7 @@
 
 import type { AxiosInstance } from 'axios';
 import type { Language, Problem, ProblemMode } from '../types';
+import type { PaginatedProblemsResponse } from '../types/problemList';
 
 /**
  * Fetches a single problem by its ID
@@ -77,3 +78,31 @@ export const fetchLanguages = async (axios:AxiosInstance,): Promise<Language[]> 
   const response = await axios.get<Language[]>('/problems/languages');
   return response.data;
 }
+
+/**
+ * Fetches a paginated list of problems
+ *
+ * @param axiosInstance - Axios instance (use useAxiosPrivate hook)
+ * @param page - Page number (1-indexed, defaults to 1)
+ * @param limit - Number of items per page (defaults to 20)
+ * @returns Promise resolving to paginated problems response
+ * @throws Error if the network request fails
+ *
+ * @example
+ * ```typescript
+ * const axiosPrivate = useAxiosPrivate();
+ * const response = await fetchProblemsList(axiosPrivate, 1, 20);
+ * console.log(response.problems); // Array of problems
+ * console.log(response.total); // Total count
+ * ```
+ */
+export const fetchProblemsList = async (
+  axiosInstance: AxiosInstance,
+  page: number = 1,
+  limit: number = 20
+): Promise<PaginatedProblemsResponse> => {
+  const response = await axiosInstance.get<PaginatedProblemsResponse>('/problems', {
+    params: { page, limit },
+  });
+  return response.data;
+};

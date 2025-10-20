@@ -2,19 +2,21 @@
  * Problems Redux slice
  *
  * Manages state for problems list, filters, pagination, and sorting.
- * Integrates with mock data for now, will connect to API later.
+ * Integrates with backend API for fetching problems.
  *
  * @module store/slices/problemsSlice
  */
 
-import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit';
+import type { AxiosInstance } from 'axios';
 import type {
   ProblemListItem,
   ProblemFilters,
   ProblemSort,
-  ProblemsListResponse,
+  ProblemListItemApi,
 } from '../../types/problemList';
-import { filterProblems } from '../../constants/mockProblemsData';
+import { fetchProblemsList } from '../../api/problems';
+import type { RootState } from '../store';
 
 interface ProblemsState {
   // Problems list
@@ -63,35 +65,44 @@ const initialState: ProblemsState = {
   currentProblem: null,
 };
 
+/**
+ * Async thunk to fetch problems from backend API
+ * Automatically handles loading and error states
+ *
+ * @param axiosInstance - Authenticated axios instance from useAxiosPrivate hook
+ */
+export const fetchProblems = createAsyncThunk(
+  'problems/fetchProblems',
+  async (axiosInstance: AxiosInstance, { getState }) => {
+    const state = getState() as RootState;
+    const { currentPage, pageSize } = state.problems;
+
+    const response = await fetchProblemsList(axiosInstance, currentPage, pageSize);
+
+    // Map backend response to simplified list format
+    // Note: Only fields needed for table display, full details fetched per-problem on demand
+    const mappedProblems: ProblemListItem[] = response.problems.map((p: ProblemListItemApi) => ({
+      id: p.id,
+      title: p.title,
+      difficulty: p.difficulty as 'easy' | 'medium' | 'hard',
+      acceptance_rate: Math.round(p.acceptance_percentage),
+      submissions: p.submissions,
+      accepted: p.acceptance,
+    }));
+
+    return {
+      problems: mappedProblems,
+      total: response.total,
+      page: response.page,
+      limit: response.limit,
+    };
+  }
+);
+
 const problemsSlice = createSlice({
   name: 'problems',
   initialState,
   reducers: {
-    /**
-     * Fetch problems with current filters, sort, and pagination
-     */
-    fetchProblems: (state) => {
-      state.loading = true;
-      state.error = null;
-
-      // Use mock data function
-      const result = filterProblems(
-        state.filters.search,
-        state.filters.difficulty,
-        state.filters.status,
-        state.filters.tags,
-        state.currentPage,
-        state.pageSize,
-        state.sort.field,
-        state.sort.order
-      );
-
-      state.problems = result.problems;
-      state.total = result.total;
-      state.totalPages = result.totalPages;
-      state.loading = false;
-    },
-
     /**
      * Set search filter
      */
@@ -208,10 +219,26 @@ const problemsSlice = createSlice({
       state.loading = false;
     },
   },
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchProblems.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchProblems.fulfilled, (state, action) => {
+        state.loading = false;
+        state.problems = action.payload.problems;
+        state.total = action.payload.total;
+        state.totalPages = Math.ceil(action.payload.total / action.payload.limit);
+      })
+      .addCase(fetchProblems.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || 'Failed to fetch problems';
+      });
+  },
 });
 
 export const {
-  fetchProblems,
   setSearch,
   setDifficulty,
   setStatus,

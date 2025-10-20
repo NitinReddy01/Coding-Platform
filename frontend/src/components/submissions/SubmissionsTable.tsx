@@ -1,4 +1,4 @@
-import { useDispatch } from 'react-redux';
+import { useAppDispatch } from '../../store/store';
 import { Link } from 'react-router-dom';
 import { ChevronUp, ChevronDown, CheckCircle2, XCircle, AlertTriangle, Clock, Zap, Code2 } from 'lucide-react';
 import { Badge } from '../ui/badge';
@@ -14,7 +14,7 @@ interface SubmissionsTableProps {
 }
 
 export function SubmissionsTable({ submissions, sort }: SubmissionsTableProps) {
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
 
   const handleSort = (field: SubmissionsSort['field']) => {
     dispatch(toggleSort(field));

@@ -1,5 +1,4 @@
 import { useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
 import { ListTodo } from 'lucide-react';
 import { Navbar } from '../components/layout/Navbar';
 import { Footer } from '../components/layout/Footer';
@@ -7,11 +6,13 @@ import { ProblemsFilters } from '../components/problems/ProblemsFilters';
 import { ProblemsTable } from '../components/problems/ProblemsTable';
 import { ProblemsTableSkeleton } from '../components/problems/ProblemsTableSkeleton';
 import { Pagination, PaginationInfo } from '../components/ui/pagination';
-import type { RootState } from '../store/store';
+import { useAppDispatch, useAppSelector } from '../store/store';
 import { fetchProblems, setPage } from '../store/slices/problemsSlice';
+import { useAxiosPrivate } from '../hooks/useAxiosPrivate';
 
 export function ProblemsListPage() {
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
+  const axiosPrivate = useAxiosPrivate();
   const {
     problems,
     total,
@@ -21,12 +22,12 @@ export function ProblemsListPage() {
     filters,
     sort,
     loading,
-  } = useSelector((state: RootState) => state.problems);
+  } = useAppSelector((state) => state.problems);
 
   // Fetch problems on mount and when filters/sort/page change
   useEffect(() => {
-    dispatch(fetchProblems());
-  }, [dispatch, filters, sort, currentPage]);
+    dispatch(fetchProblems(axiosPrivate));
+  }, [dispatch, axiosPrivate, filters, sort, currentPage]);
 
   const handlePageChange = (page: number) => {
     dispatch(setPage(page));
@@ -90,7 +91,12 @@ export function ProblemsListPage() {
               {loading ? (
                 <ProblemsTableSkeleton rows={pageSize} />
               ) : (
-                <ProblemsTable problems={problems} sort={sort} />
+                <ProblemsTable
+                  problems={problems}
+                  sort={sort}
+                  currentPage={currentPage}
+                  pageSize={pageSize}
+                />
               )}
             </div>
 

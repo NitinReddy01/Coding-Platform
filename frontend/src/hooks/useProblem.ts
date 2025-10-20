@@ -10,7 +10,6 @@
 import { useEffect, useState } from 'react';
 import { fetchProblem } from '../api/problems';
 import { useAxiosPrivate } from './useAxiosPrivate';
-import { mockProblem } from '../constants/mockData';
 import type { Problem, ProblemMode } from '../types';
 
 /**

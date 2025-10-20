@@ -1,8 +1,7 @@
-import { useDispatch, useSelector } from 'react-redux';
+import { useAppDispatch, useAppSelector } from '../../store/store';
 import { Search, X, Filter } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Select } from '../ui/dropdown';
-import type { RootState } from '../../store/store';
 import {
   setStatusFilter,
   setLanguageFilter,
@@ -12,8 +11,8 @@ import {
 } from '../../store/slices/submissionsSlice';
 
 export function SubmissionsFilters() {
-  const dispatch = useDispatch();
-  const { filters } = useSelector((state: RootState) => state.submissions);
+  const dispatch = useAppDispatch();
+  const { filters } = useAppSelector((state) => state.submissions);
 
   const statusOptions = [
     { label: 'All Statuses', value: 'all' },

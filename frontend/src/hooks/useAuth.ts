@@ -106,8 +106,8 @@ export const useAuth = (): UseAuthReturn => {
         // Update Redux with user and token
         dispatch(setCredentials({ user, accessToken }));
 
-        // Navigate to problems page
-        navigate('/problems/1');
+        // Navigate to problems list page
+        navigate('/problems');
       } catch (error) {
         dispatch(setLoading(false));
         throw error; // Re-throw to let component handle error display
@@ -129,8 +129,8 @@ export const useAuth = (): UseAuthReturn => {
         // Update Redux with user and token
         dispatch(setCredentials({ user, accessToken }));
 
-        // Navigate to problems page
-        navigate('/problems/1');
+        // Navigate to problems list page
+        navigate('/problems');
       } catch (error) {
         dispatch(setLoading(false));
         throw error; // Re-throw to let component handle error display
