@@ -18,6 +18,7 @@ type Config struct {
 	AccessTokenExpiry  time.Duration
 	RefreshTokenExpiry time.Duration
 	AllowedOrigins     []string
+	RabbitMQURL        string
 }
 
 func Load() *Config {
@@ -59,6 +60,12 @@ func Load() *Config {
 	allowedOriginsStr := getEnv("CORS_ALLOWED_ORIGINS", "http://localhost:5173")
 	allowedOrigins := parseAllowedOrigins(allowedOriginsStr)
 
+	rabbitMqUrl := getEnv("RABBITMQ_URL", "")
+
+	if rabbitMqUrl == "" {
+		log.Fatal("Missing rabbit mq url")
+	}
+
 	config := &Config{
 		Port:               portString,
 		DB_URL:             dbUrl,
@@ -67,6 +74,7 @@ func Load() *Config {
 		AccessTokenExpiry:  accessTokenExpiry,
 		RefreshTokenExpiry: refreshTokenExpiry,
 		AllowedOrigins:     allowedOrigins,
+		RabbitMQURL:        rabbitMqUrl,
 	}
 	return config
 }
