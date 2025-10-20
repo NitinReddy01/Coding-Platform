@@ -24,3 +24,7 @@ func JSONError(w http.ResponseWriter, status int, message string) {
 	w.WriteHeader(status)
 	json.NewEncoder(w).Encode(models.ErrorResponse{Message: message})
 }
+
+func InternalErrorHandler(w http.ResponseWriter) {
+	JSONError(w, http.StatusInternalServerError, "An Unexpected Error Occured")
+}

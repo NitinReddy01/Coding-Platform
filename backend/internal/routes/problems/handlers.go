@@ -3,9 +3,11 @@ package problems
 import (
 	"app/internal/db"
 	"app/internal/lib"
+	"app/internal/middlewares"
 	"app/internal/models"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 )
@@ -40,7 +42,8 @@ func GetProblemByTitle(w http.ResponseWriter, r *http.Request) {
 	if problemMode == models.Edit {
 		problem, err := db.GetProblemForAdmin(ctx, title, false)
 		if err != nil {
-			lib.JSONError(w, http.StatusInternalServerError, "Internal Server Error")
+			log.Printf("Error while fetching problem for admin: %v", err)
+			lib.InternalErrorHandler(w)
 			return
 		}
 		lib.JSON(w, http.StatusOK, map[string]any{
@@ -52,7 +55,8 @@ func GetProblemByTitle(w http.ResponseWriter, r *http.Request) {
 	problem, err := db.GetProblem(ctx, title, false)
 
 	if err != nil {
-		lib.JSONError(w, http.StatusInternalServerError, "Internal Server Error")
+		log.Printf("Error while fetching problem: %v", err)
+		lib.InternalErrorHandler(w)
 		return
 	}
 
@@ -83,7 +87,8 @@ func AddProblem(w http.ResponseWriter, r *http.Request) {
 	exists, err := db.ProblemExists(ctx, problemData.Title)
 
 	if err != nil {
-		lib.JSONError(w, http.StatusInternalServerError, "Internal Server Error")
+		log.Printf("Error while checking problem exists: %v", err)
+		lib.InternalErrorHandler(w)
 		return
 	}
 
@@ -95,11 +100,25 @@ func AddProblem(w http.ResponseWriter, r *http.Request) {
 	err = db.AddProblem(ctx, problemData)
 
 	if err != nil {
-		lib.JSONError(w, http.StatusInternalServerError, "Internal Server Error")
+		log.Printf("Error when adding a problem: %v", err)
+		lib.InternalErrorHandler(w)
 		return
 	}
 
 	lib.JSON(w, http.StatusCreated, map[string]any{
 		"message": "Problem Added",
 	})
+}
+
+func FecthProblems(w http.ResponseWriter, r *http.Request) {
+	pagination := middlewares.GetPagination(r)
+	problems, err := db.FecthProblems(r.Context(), pagination.Offset, pagination.Limit)
+
+	if err != nil {
+		log.Printf("Error while fetching problems: %v", err)
+		lib.InternalErrorHandler(w)
+		return
+	}
+
+	lib.JSON(w, http.StatusOK, problems)
 }

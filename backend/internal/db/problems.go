@@ -245,3 +245,62 @@ func GetProblemForAdmin(ctx context.Context, title string, sample bool) (*models
 
 	return &problem, nil
 }
+
+func FecthProblems(ctx context.Context, offset uint16, limit uint8) (*models.PaginatedProblems, error) {
+	query := `
+		SELECT
+			id, title, difficulty, accepted, submissions,
+			CASE
+				WHEN submissions > 0 
+				THEN ROUND((accepted::decimal / submissions) * 100, 2)
+				ELSE 0
+   			END AS acceptance_percentage
+		FROM problems
+		where status = 'approved' 
+		ORDER BY created_at ASC
+		LIMIT $1 OFFSET $2
+	`
+
+	problemRows, err := Pool.Query(ctx, query, limit, offset)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch tags: %w", err)
+	}
+	defer problemRows.Close()
+
+	problems := make([]models.ProblemListItem, 0, limit)
+
+	for problemRows.Next() {
+		var problem models.ProblemListItem
+
+		if err := problemRows.Scan(&problem.ID, &problem.Title, &problem.Difficulty, &problem.Acceptance, &problem.Submissions, &problem.AcceptancePercentage); err != nil {
+			return nil, fmt.Errorf("failed to fetch problem: %w", err)
+		}
+
+		problems = append(problems, problem)
+	}
+
+	if err := problemRows.Err(); err != nil {
+		return nil, fmt.Errorf("iteration error: %w", err)
+	}
+
+	var total uint16
+
+	err = Pool.QueryRow(ctx, `
+		SELECT COUNT(*)
+		FROM problems
+		WHERE status = 'approved'
+	`).Scan(&total)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to count problems: %w", err)
+	}
+
+	paginatedProblems := &models.PaginatedProblems{
+		Problems: problems,
+		Total:    total,
+		Page:     1,
+		Limit:    limit,
+	}
+
+	return paginatedProblems, nil
+}

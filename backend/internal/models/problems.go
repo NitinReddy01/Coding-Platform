@@ -92,3 +92,19 @@ func (m ProblemMode) IsValid() bool {
 		return false
 	}
 }
+
+type ProblemListItem struct {
+	ID                   string  `json:"id"`
+	Title                string  `json:"title"`
+	Difficulty           string  `json:"difficulty"`
+	Acceptance           int16   `json:"acceptance"`
+	Submissions          int16   `json:"submissions"`
+	AcceptancePercentage float64 `json:"acceptance_percentage"`
+}
+
+type PaginatedProblems struct {
+	Problems []ProblemListItem `json:"problems"`
+	Total    uint16            `json:"total"`
+	Page     uint16            `json:"page"`
+	Limit    uint8             `json:"limit"`
+}
