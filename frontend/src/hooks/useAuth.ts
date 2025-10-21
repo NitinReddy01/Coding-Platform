@@ -35,6 +35,9 @@ interface UseAuthReturn {
   /** Whether to persist login session (Remember Me) */
   persist: boolean;
 
+  /** User's roles (empty array if not authenticated) */
+  roles: string[];
+
   /**
    * Login with email and password
    * @param credentials - Email and password
@@ -60,6 +63,32 @@ interface UseAuthReturn {
    * @param persist - Whether to persist login session
    */
   setPersist: (persist: boolean) => void;
+
+  /**
+   * Check if user has a specific role
+   * @param role - Role name to check (e.g., 'admin', 'author')
+   * @returns True if user has the role, false otherwise
+   */
+  hasRole: (role: string) => boolean;
+
+  /**
+   * Check if user has any of the specified roles
+   * @param roles - Role names to check
+   * @returns True if user has at least one of the roles, false otherwise
+   */
+  hasAnyRole: (...roles: string[]) => boolean;
+
+  /**
+   * Check if user is an admin
+   * @returns True if user has 'admin' role, false otherwise
+   */
+  isAdmin: () => boolean;
+
+  /**
+   * Check if user is an author
+   * @returns True if user has 'author' role, false otherwise
+   */
+  isAuthor: () => boolean;
 }
 
 /**
@@ -168,14 +197,56 @@ export const useAuth = (): UseAuthReturn => {
     [dispatch]
   );
 
+  // Get user roles (empty array if not authenticated)
+  const roles = user?.roles || [];
+
+  /**
+   * Check if user has a specific role
+   */
+  const hasRole = useCallback(
+    (role: string): boolean => {
+      return roles.includes(role);
+    },
+    [roles]
+  );
+
+  /**
+   * Check if user has any of the specified roles
+   */
+  const hasAnyRole = useCallback(
+    (...checkRoles: string[]): boolean => {
+      return checkRoles.some((role) => roles.includes(role));
+    },
+    [roles]
+  );
+
+  /**
+   * Check if user is an admin
+   */
+  const isAdmin = useCallback((): boolean => {
+    return hasRole('admin');
+  }, [hasRole]);
+
+  /**
+   * Check if user is an author
+   */
+  const isAuthor = useCallback((): boolean => {
+    return hasRole('author');
+  }, [hasRole]);
+
   return {
     user,
     isAuthenticated,
     loading,
     persist,
+    roles,
     login,
     register,
     logout,
     setPersist,
+    hasRole,
+    hasAnyRole,
+    isAdmin,
+    isAuthor,
   };
 };

@@ -24,7 +24,7 @@ export function ProblemPage() {
 
   // Fetch problem using the title from URL
   const { problem, loading, error } = useProblem(problemTitle, 'practice');
-  const { results, isRunning, isSubmitting, error: submissionError, runCode, submitCode } = useSubmission(false);
+  const { results, isRunning, isSubmitting, error: submissionError, runCode, submitCode } = useSubmission();
   const { code, language, languages } = useAppSelector((state) => state.editor);
 
   // Set default code when component mounts or language changes
@@ -43,6 +43,7 @@ export function ProblemPage() {
     const submission: Submission = {
       code,
       language,
+      problem_id: problem.id,
       test_cases: problem.sample_test_cases,
       time_limit: problem.time_limit,
       memory_limit: problem.memory_limit,
@@ -57,7 +58,8 @@ export function ProblemPage() {
     const submission: Submission = {
       code,
       language,
-      test_cases: problem.sample_test_cases, // In real scenario, this would be all test cases
+      problem_id: problem.id,
+      test_cases: problem.sample_test_cases,
       time_limit: problem.time_limit,
       memory_limit: problem.memory_limit,
     };

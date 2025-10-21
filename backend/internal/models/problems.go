@@ -69,11 +69,12 @@ type ProblemInput struct {
 	Title       string          `json:"title"`
 	Description string          `json:"description"`
 	Difficulty  DifficultyLevel `json:"difficulty"`
-	AuthorID    string          `json:"author_id"`
-	Status      RequestStatus   `json:"status"`
 	TimeLimit   int             `json:"time_limit"`   // milliseconds
 	MemoryLimit int             `json:"memory_limit"` // MB
 	Constraints *string         `json:"constraints,omitempty"`
+	TestCases   []TestCase      `json:"test_cases"`
+	Tags        []string        `json:"tags"`
+	// Note: AuthorID and Status are set server-side based on authenticated user
 }
 
 type ProblemMode string

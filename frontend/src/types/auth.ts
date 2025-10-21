@@ -16,6 +16,7 @@ export interface User {
   id: string;
   email: string;
   name: string;
+  roles?: string[]; // User roles (admin, author, user, guest)
 }
 
 /**
@@ -52,6 +53,16 @@ export interface AuthResponse {
  */
 export interface RefreshResponse {
   accessToken: string;
+}
+
+/**
+ * User profile response from /api/auth/me
+ *
+ * Returns user data with roles
+ */
+export interface UserProfileResponse {
+  user: User;
+  roles: string[];
 }
 
 /**

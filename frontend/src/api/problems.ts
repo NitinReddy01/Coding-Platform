@@ -106,3 +106,52 @@ export const fetchProblemsList = async (
   });
   return response.data;
 };
+
+/**
+ * Creates a new problem
+ *
+ * @param axiosInstance - Axios instance (use useAxiosPrivate hook)
+ * @param problemData - Problem data including title, description, test cases, tags, etc.
+ * @returns Promise that resolves when the problem is created
+ * @throws Error if the creation fails or validation errors occur
+ *
+ * @example
+ * ```typescript
+ * const axiosPrivate = useAxiosPrivate();
+ * const problemData = {
+ *   title: "Two Sum",
+ *   description: "Find two numbers that add up to target",
+ *   difficulty: "easy",
+ *   author_id: userId,
+ *   status: "pending",
+ *   time_limit: 2000,
+ *   memory_limit: 256,
+ *   test_cases: [...],
+ *   tags: ["array", "hash-table"],
+ * };
+ * await createProblem(axiosPrivate, problemData);
+ * ```
+ */
+export const createProblem = async (
+  axiosInstance: AxiosInstance,
+  problemData: {
+    title: string;
+    description: string;
+    difficulty: string;
+    author_id: string;
+    status: string;
+    time_limit: number;
+    memory_limit: number;
+    constraints?: string;
+    test_cases: Array<{
+      input: string;
+      expected_output: string;
+      is_sample: boolean;
+      order_index: number;
+      explanation?: string;
+    }>;
+    tags: string[];
+  }
+): Promise<void> => {
+  await axiosInstance.post('/problems', problemData);
+};

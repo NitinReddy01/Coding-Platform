@@ -13,7 +13,9 @@ import type {
   RegisterRequest,
   AuthResponse,
   RefreshResponse,
+  UserProfileResponse,
 } from '../types/auth';
+import type { AxiosInstance } from 'axios';
 
 /**
  * Register a new user with email and password
@@ -100,6 +102,26 @@ export const refreshAccessToken = async (): Promise<RefreshResponse> => {
  */
 export const logout = async (): Promise<void> => {
   await apiClient.post('/auth/logout');
+};
+
+/**
+ * Get current user profile with roles
+ *
+ * Fetches the authenticated user's profile including their roles.
+ * Requires valid access token in Authorization header.
+ *
+ * @returns User profile with roles
+ * @throws Error if not authenticated or request fails
+ *
+ * @example
+ * ```typescript
+ * const { user, roles } = await getCurrentUser();
+ * console.log(user.email, roles); // "admin@example.com", ["admin"]
+ * ```
+ */
+export const getCurrentUser = async (axiosPrivate:AxiosInstance ): Promise<UserProfileResponse> => {
+  const response = await axiosPrivate.get<UserProfileResponse>('/auth/me');
+  return response.data;
 };
 
 /**

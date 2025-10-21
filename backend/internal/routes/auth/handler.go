@@ -3,6 +3,7 @@ package auth
 import (
 	"app/internal/db"
 	"app/internal/lib"
+	"app/internal/middlewares"
 	"app/internal/models"
 	"encoding/json"
 	"log"
@@ -80,6 +81,13 @@ func HandleRegister(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Error creating user: %v", err)
 		lib.JSONError(w, http.StatusInternalServerError, "Failed to create user")
 		return
+	}
+
+	// Assign default 'user' role to new user
+	err = db.AssignRoleToUser(ctx, user.ID, "user")
+	if err != nil {
+		log.Printf("Error assigning role to user: %v", err)
+		// Continue even if role assignment fails - user can still login
 	}
 
 	// Generate tokens
@@ -282,6 +290,34 @@ func HandleLogout(w http.ResponseWriter, r *http.Request) {
 	// Send success response
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{"message": "Logged out successfully"})
+}
+
+// HandleGetMe returns the current authenticated user's profile with roles
+func HandleGetMe(w http.ResponseWriter, r *http.Request) {
+	// Get user context from auth middleware
+	userCtx := middlewares.GetUserContext(r)
+	if userCtx == nil {
+		lib.JSONError(w, http.StatusUnauthorized, "Authentication required")
+		return
+	}
+
+	ctx := r.Context()
+
+	// Get user from database
+	user, err := db.GetUserByID(ctx, userCtx.UserID)
+	if err != nil {
+		log.Printf("Error getting user: %v", err)
+		lib.JSONError(w, http.StatusInternalServerError, "Failed to get user profile")
+		return
+	}
+
+	// Return user profile with roles (roles already in context from middleware)
+	response := models.UserProfile{
+		User:  *user,
+		Roles: userCtx.Roles,
+	}
+
+	lib.JSON(w, http.StatusOK, response)
 }
 
 // Helper function to set refresh token cookie
