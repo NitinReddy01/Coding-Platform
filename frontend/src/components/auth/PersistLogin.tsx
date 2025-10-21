@@ -19,6 +19,7 @@ import { setUserProfile } from '../../store/slices/authSlice';
 import { fetchLanguages } from '../../api/problems';
 import { getCurrentUser } from '../../api/auth';
 import { useAxiosPrivate } from '../../hooks/useAxiosPrivate';
+import { getErrorMessage } from '../../utils/errorHandler';
 
 /**
  * Persist login wrapper
@@ -128,7 +129,7 @@ export const PersistLogin: React.FC = () => {
         const fetchedLanguages = await fetchLanguages(axios);
         dispatch(setLanguages(fetchedLanguages));
       } catch (error) {
-        const message = error instanceof Error ? error.message : 'Failed to load languages';
+        const message = getErrorMessage(error, 'Failed to load languages');
         dispatch(setLanguagesError(message));
         console.error('Failed to fetch languages:', error);
       }

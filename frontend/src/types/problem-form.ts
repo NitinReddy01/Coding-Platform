@@ -1,20 +1,11 @@
-/**
- * Type definitions for the problem creation form
- *
- * @module types/problem-form
- */
-
-import type { Difficulty, RequestStatus } from './problem';
+import type { Difficulty } from './problem';
 
 /**
  * Form test case with additional UI state
  */
 export interface FormTestCase {
-  /** Test case input */
   input: string;
-  /** Expected output */
   expected_output: string;
-  /** Whether this is a sample test case (visible to users) */
   is_sample: boolean;
   /** Order/position of the test case */
   order_index: number;
@@ -31,21 +22,17 @@ export interface FormTestCase {
  * based on the authenticated user and their role (admin auto-approves)
  */
 export interface ProblemFormData {
-  /** Problem title */
   title: string;
-  /** Problem description (markdown or plain text) */
   description: string;
-  /** Difficulty level */
   difficulty: Difficulty;
+  input_description:string;
+  output_description:string
   /** Time limit in milliseconds */
   time_limit: number;
   /** Memory limit in MB */
   memory_limit: number;
-  /** Optional constraints */
   constraints?: string;
-  /** Test cases */
   test_cases: FormTestCase[];
-  /** Tags (array of tag names) */
   tags: string[];
 }
 
@@ -58,6 +45,8 @@ export interface ProblemFormData {
 export interface ProblemInput {
   title: string;
   description: string;
+  input_description:string;
+  output_description:string;
   difficulty: Difficulty;
   time_limit: number;
   memory_limit: number;
@@ -78,6 +67,8 @@ export interface ProblemInput {
 export interface FormErrors {
   title?: string;
   description?: string;
+  input_description?: string;
+  output_description?: string;
   difficulty?: string;
   time_limit?: string;
   memory_limit?: string;
@@ -162,6 +153,8 @@ export const INITIAL_FORM_DATA: ProblemFormData = {
   title: '',
   description: '',
   difficulty: 'easy',
+  input_description:'',
+  output_description:'',
   time_limit: 2000, // 2 seconds default
   memory_limit: 256, // 256 MB default
   constraints: '',

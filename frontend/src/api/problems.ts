@@ -10,6 +10,7 @@
 import type { AxiosInstance } from 'axios';
 import type { Language, Problem, ProblemMode } from '../types';
 import type { PaginatedProblemsResponse } from '../types/problemList';
+import type { ProblemInput } from '../types/problem-form';
 
 /**
  * Fetches a single problem by its ID
@@ -134,24 +135,7 @@ export const fetchProblemsList = async (
  */
 export const createProblem = async (
   axiosInstance: AxiosInstance,
-  problemData: {
-    title: string;
-    description: string;
-    difficulty: string;
-    author_id: string;
-    status: string;
-    time_limit: number;
-    memory_limit: number;
-    constraints?: string;
-    test_cases: Array<{
-      input: string;
-      expected_output: string;
-      is_sample: boolean;
-      order_index: number;
-      explanation?: string;
-    }>;
-    tags: string[];
-  }
+  problemData: ProblemInput
 ): Promise<void> => {
   await axiosInstance.post('/problems', problemData);
 };

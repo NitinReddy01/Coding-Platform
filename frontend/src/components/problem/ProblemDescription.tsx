@@ -53,10 +53,36 @@ export function ProblemDescription({ problem }: ProblemDescriptionProps) {
       {/* Description */}
       <Card>
         <CardContent className="pt-6">
+          <h3 className="font-semibold mb-3">Description:</h3>
           <div
             className="prose prose-sm dark:prose-invert max-w-none"
             dangerouslySetInnerHTML={{
               __html: problem.description.replace(/\n/g, '<br />').replace(/`([^`]+)`/g, '<code>$1</code>')
+            }}
+          />
+        </CardContent>
+      </Card>
+
+
+      <Card>
+        <CardContent className="pt-6">
+          <h3 className="font-semibold mb-3">Input:</h3>
+          <div
+            className="prose prose-sm dark:prose-invert max-w-none"
+            dangerouslySetInnerHTML={{
+              __html: problem.input_description.replace(/\n/g, '<br />').replace(/`([^`]+)`/g, '<code>$1</code>')
+            }}
+          />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="pt-6">
+          <h3 className="font-semibold mb-3">Output:</h3>
+          <div
+            className="prose prose-sm dark:prose-invert max-w-none"
+            dangerouslySetInnerHTML={{
+              __html: problem.output_description.replace(/\n/g, '<br />').replace(/`([^`]+)`/g, '<code>$1</code>')
             }}
           />
         </CardContent>

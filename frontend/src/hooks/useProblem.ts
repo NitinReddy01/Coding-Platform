@@ -10,6 +10,7 @@
 import { useEffect, useState } from 'react';
 import { fetchProblem } from '../api/problems';
 import { useAxiosPrivate } from './useAxiosPrivate';
+import { getErrorMessage } from '../utils/errorHandler';
 import type { Problem, ProblemMode } from '../types';
 
 /**
@@ -51,7 +52,7 @@ export const useProblem = (problemId: string,mode:ProblemMode) => {
         const data = await fetchProblem(axiosPrivate, id,mode);
         setProblem(data);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to load problem';
+      const message = getErrorMessage(err, 'Failed to load problem');
       setError(message);
     } finally {
       setLoading(false);

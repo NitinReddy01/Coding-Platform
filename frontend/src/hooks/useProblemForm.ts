@@ -21,6 +21,7 @@ import type {
 import { INITIAL_FORM_DATA, FORM_LIMITS } from '../types/problem-form';
 import { useAxiosPrivate } from './useAxiosPrivate';
 import { createProblem } from '../api/problems';
+import { getErrorMessage } from '../utils/errorHandler';
 
 const STORAGE_KEY = 'problem-form-draft';
 const STEPS: FormStep[] = ['details', 'test-cases', 'tags', 'preview'];
@@ -160,10 +161,22 @@ export const useProblemForm = (): ProblemFormState & ProblemFormActions => {
       newErrors.title = `Title must not exceed ${FORM_LIMITS.TITLE_MAX_LENGTH} characters`;
     }
 
-    if (!data.description || data.description.trim().length < FORM_LIMITS.DESCRIPTION_MIN_LENGTH) {
-      newErrors.description = `Description must be at least ${FORM_LIMITS.DESCRIPTION_MIN_LENGTH} characters`;
+    if (!data.description || data.description.trim().length < 10) {
+      newErrors.description = 'Description must be at least 10 characters';
     } else if (data.description.length > FORM_LIMITS.DESCRIPTION_MAX_LENGTH) {
       newErrors.description = `Description must not exceed ${FORM_LIMITS.DESCRIPTION_MAX_LENGTH} characters`;
+    }
+
+    if (!data.input_description || data.input_description.trim().length < 10) {
+      newErrors.input_description = 'Input description must be at least 10 characters';
+    } else if (data.input_description.length > 10000) {
+      newErrors.input_description = 'Input description must not exceed 10000 characters';
+    }
+
+    if (!data.output_description || data.output_description.trim().length < 10) {
+      newErrors.output_description = 'Output description must be at least 10 characters';
+    } else if (data.output_description.length > 10000) {
+      newErrors.output_description = 'Output description must not exceed 10000 characters';
     }
 
     if (!data.difficulty) {
@@ -245,7 +258,11 @@ export const useProblemForm = (): ProblemFormState & ProblemFormActions => {
         break;
       case 'preview':
         // Preview step doesn't have validation, it shows all errors
-        stepErrors = validateForm();
+        stepErrors = {
+          ...validateDetails(),
+          ...validateTestCases(),
+          ...validateTags(),
+        };
         break;
     }
 
@@ -323,6 +340,8 @@ export const useProblemForm = (): ProblemFormState & ProblemFormActions => {
       const problemInput: ProblemInput = {
         title: data.title.trim(),
         description: data.description.trim(),
+        input_description:data.input_description,
+        output_description:data.output_description,
         difficulty: data.difficulty,
         time_limit: data.time_limit,
         memory_limit: data.memory_limit,
@@ -349,9 +368,8 @@ export const useProblemForm = (): ProblemFormState & ProblemFormActions => {
       navigate('/problems');
     } catch (error) {
       console.error('Failed to create problem:', error);
-      toast.error(
-        error instanceof Error ? error.message : 'Failed to create problem. Please try again.'
-      );
+      const errorMessage = getErrorMessage(error, 'Failed to create problem. Please try again.');
+      toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }

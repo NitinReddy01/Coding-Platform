@@ -1,12 +1,3 @@
-/**
- * Problem Details Form Component
- *
- * Form section for entering basic problem information like title, description,
- * difficulty, constraints, and execution limits.
- *
- * @module components/problem-form/ProblemDetailsForm
- */
-
 import { Input } from '../ui/Input';
 import { Label } from '../ui/Label';
 import { Textarea } from '../ui/Textarea';
@@ -51,7 +42,10 @@ export const ProblemDetailsForm: React.FC<ProblemDetailsFormProps> = ({
           maxLength={200}
         />
         {errors.title && (
-          <p className="mt-1 text-sm text-destructive">{errors.title}</p>
+          <div className="flex items-center gap-2 mt-2 p-2 bg-destructive/10 border border-destructive/30 rounded text-destructive text-sm font-medium">
+            <span className="text-base">❌</span>
+            {errors.title}
+          </div>
         )}
         <p className="mt-1 text-xs text-muted-foreground">
           {data.title.length}/200 characters
@@ -73,10 +67,63 @@ export const ProblemDetailsForm: React.FC<ProblemDetailsFormProps> = ({
           className="font-mono text-sm"
         />
         {errors.description && (
-          <p className="mt-1 text-sm text-destructive">{errors.description}</p>
+          <div className="flex items-center gap-2 mt-2 p-2 bg-destructive/10 border border-destructive/30 rounded text-destructive text-sm font-medium">
+            <span className="text-base">❌</span>
+            {errors.description}
+          </div>
         )}
         <p className="mt-1 text-xs text-muted-foreground">
           {data.description.length}/10000 characters | Markdown supported
+        </p>
+      </div>
+
+      {/* Input Description */}
+      <div>
+        <Label htmlFor="input_description" required>
+          Input Description
+        </Label>
+        <Textarea
+          id="input_description"
+          placeholder="Describe the input format. You can use markdown formatting."
+          value={data.input_description}
+          onChange={(e) => onUpdate('input_description', e.target.value)}
+          error={!!errors.input_description}
+          rows={10}
+          className="font-mono text-sm"
+        />
+        {errors.input_description && (
+          <div className="flex items-center gap-2 mt-2 p-2 bg-destructive/10 border border-destructive/30 rounded text-destructive text-sm font-medium">
+            <span className="text-base">❌</span>
+            {errors.input_description}
+          </div>
+        )}
+        <p className="mt-1 text-xs text-muted-foreground">
+          {(data.input_description?.length ?? 0)}/10000 characters | Markdown supported
+        </p>
+      </div>
+
+      {/* Output Description */}
+      <div>
+        <Label htmlFor="output_description" required>
+          Output Description
+        </Label>
+        <Textarea
+          id="output_description"
+          placeholder="Describe the output format. You can use markdown formatting."
+          value={data.output_description}
+          onChange={(e) => onUpdate('output_description', e.target.value)}
+          error={!!errors.output_description}
+          rows={10}
+          className="font-mono text-sm"
+        />
+        {errors.output_description && (
+          <div className="flex items-center gap-2 mt-2 p-2 bg-destructive/10 border border-destructive/30 rounded text-destructive text-sm font-medium">
+            <span className="text-base">❌</span>
+            {errors.output_description}
+          </div>
+        )}
+        <p className="mt-1 text-xs text-muted-foreground">
+          {(data.output_description?.length ?? 0)}/10000 characters | Markdown supported
         </p>
       </div>
 
@@ -96,7 +143,10 @@ export const ProblemDetailsForm: React.FC<ProblemDetailsFormProps> = ({
           ))}
         </Select>
         {errors.difficulty && (
-          <p className="mt-1 text-sm text-destructive">{errors.difficulty}</p>
+          <div className="flex items-center gap-2 mt-2 p-2 bg-destructive/10 border border-destructive/30 rounded text-destructive text-sm font-medium">
+            <span className="text-base">❌</span>
+            {errors.difficulty}
+          </div>
         )}
       </div>
 
@@ -119,7 +169,10 @@ export const ProblemDetailsForm: React.FC<ProblemDetailsFormProps> = ({
             step={100}
           />
           {errors.time_limit && (
-            <p className="mt-1 text-sm text-destructive">{errors.time_limit}</p>
+            <div className="flex items-center gap-2 mt-2 p-2 bg-destructive/10 border border-destructive/30 rounded text-destructive text-sm font-medium">
+              <span className="text-base">❌</span>
+              {errors.time_limit}
+            </div>
           )}
           <p className="mt-1 text-xs text-muted-foreground">
             Range: 100-10000 ms
@@ -143,7 +196,10 @@ export const ProblemDetailsForm: React.FC<ProblemDetailsFormProps> = ({
             step={16}
           />
           {errors.memory_limit && (
-            <p className="mt-1 text-sm text-destructive">{errors.memory_limit}</p>
+            <div className="flex items-center gap-2 mt-2 p-2 bg-destructive/10 border border-destructive/30 rounded text-destructive text-sm font-medium">
+              <span className="text-base">❌</span>
+              {errors.memory_limit}
+            </div>
           )}
           <p className="mt-1 text-xs text-muted-foreground">
             Range: 16-512 MB
@@ -166,7 +222,10 @@ export const ProblemDetailsForm: React.FC<ProblemDetailsFormProps> = ({
           className="font-mono text-sm"
         />
         {errors.constraints && (
-          <p className="mt-1 text-sm text-destructive">{errors.constraints}</p>
+          <div className="flex items-center gap-2 mt-2 p-2 bg-destructive/10 border border-destructive/30 rounded text-destructive text-sm font-medium">
+            <span className="text-base">❌</span>
+            {errors.constraints}
+          </div>
         )}
         <p className="mt-1 text-xs text-muted-foreground">
           Input/output constraints, variable ranges, etc.
