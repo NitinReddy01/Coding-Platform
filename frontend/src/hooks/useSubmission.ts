@@ -9,6 +9,7 @@
 import { useState, useCallback } from 'react';
 import { runCode, submitCode } from '../api/submissions';
 import { useAxiosPrivate } from './useAxiosPrivate';
+import { getErrorMessage } from '../utils/errorHandler';
 import type { Submission, ExecutionResult } from '../types';
 
 /**
@@ -46,7 +47,7 @@ export const useSubmission = () => {
       // setResults(response.results);
       console.log(submission);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to run code';
+      const message = getErrorMessage(err, 'Failed to run code');
       setError(message);
     } finally {
       setIsRunning(false);
@@ -63,7 +64,7 @@ export const useSubmission = () => {
       // setResults(response.results);
 
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to submit code';
+      const message = getErrorMessage(err, 'Failed to submit code');
       setError(message);
     } finally {
       setIsSubmitting(false);

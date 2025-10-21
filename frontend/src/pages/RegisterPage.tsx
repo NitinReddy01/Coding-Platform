@@ -14,6 +14,7 @@ import { Input } from '../components/ui/Input';
 import { Label } from '../components/ui/Label';
 import { Card } from '../components/ui/card';
 import { Button } from '../components/ui/button';
+import { getErrorMessage } from '../utils/errorHandler';
 
 
 
@@ -58,9 +59,8 @@ export const RegisterPage: React.FC = () => {
       await register({ name, email, password });
       // Navigation handled by useAuth hook
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : 'Registration failed. Please try again.'
-      );
+      const errorMessage = getErrorMessage(err, 'Registration failed. Please try again.');
+      setError(errorMessage);
     }
   };
 

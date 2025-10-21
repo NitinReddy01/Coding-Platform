@@ -22,8 +22,8 @@ func AddProblem(ctx context.Context, problem models.ProblemInput, authorID strin
 	problemQuery := `
 		INSERT INTO problems(
 			title, description, difficulty, author_id, status,
-			time_limit, memory_limit, constraints
-		) VALUES($1, $2, $3, $4, $5, $6, $7, $8)
+			time_limit, memory_limit, constraints, input_description, output_description
+		) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 		RETURNING id
 	`
 
@@ -36,6 +36,8 @@ func AddProblem(ctx context.Context, problem models.ProblemInput, authorID strin
 		problem.TimeLimit,
 		problem.MemoryLimit,
 		problem.Constraints,
+		problem.InputDescription,
+		problem.OutputDescription,
 	).Scan(&problemID)
 
 	if err != nil {
@@ -168,7 +170,7 @@ func GetProblem(ctx context.Context, title string, sample bool) (*models.Problem
 		SELECT
 			id, title, description, difficulty,
 			created_at, updated_at, time_limit, memory_limit,
-			constraints, submissions, accepted
+			constraints, submissions, accepted, input_description, output_description
 		FROM problems
 		WHERE title = $1 AND status = 'approved'
 	`
@@ -186,6 +188,8 @@ func GetProblem(ctx context.Context, title string, sample bool) (*models.Problem
 		&constraints,
 		&problem.Submissions,
 		&problem.Accepted,
+		&problem.InputDescription,
+		&problem.OutputDescription,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch problem: %w", err)
@@ -235,7 +239,7 @@ func GetProblemForAdmin(ctx context.Context, title string, sample bool) (*models
 		SELECT
 			id, title, description, difficulty, author_id, status,
 			reviewed_by, reviewed_at, created_at, updated_at,
-			time_limit, memory_limit, constraints, submissions, accepted
+			time_limit, memory_limit, constraints, submissions, accepted, input_description, output_description
 		FROM problems
 		WHERE title = $1
 	`
@@ -257,6 +261,8 @@ func GetProblemForAdmin(ctx context.Context, title string, sample bool) (*models
 		&constraints,
 		&problem.Submissions,
 		&problem.Accepted,
+		&problem.InputDescription,
+		&problem.OutputDescription,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch problem: %w", err)

@@ -1,11 +1,3 @@
-/**
- * Add Problem Page
- *
- * Multi-step form for creating new coding problems with test cases and tags.
- *
- * @module pages/AddProblemPage
- */
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -17,10 +9,9 @@ import { Textarea } from '../components/ui/Textarea';
 import { FileUploadZone } from '../components/ui/FileUploadZone';
 import { ProblemDetailsForm } from '../components/problem-form/ProblemDetailsForm';
 import { useProblemForm } from '../hooks/useProblemForm';
-import { useAuth } from '../hooks/useAuth';
 import { parseTestCaseFiles } from '../utils/testCaseParser';
 import { downloadSampleAsText } from '../utils/downloadSample';
-import type { FormTestCase, FormStep } from '../types/problem-form';
+import type {FormStep } from '../types/problem-form';
 
 export const AddProblemPage: React.FC = () => {
   const navigate = useNavigate();
