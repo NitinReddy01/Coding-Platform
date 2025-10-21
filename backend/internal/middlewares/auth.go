@@ -1,8 +1,10 @@
 package middlewares
 
 import (
+	"app/internal/db"
 	"app/internal/lib"
 	"context"
+	"log"
 	"net/http"
 	"strings"
 )
@@ -17,7 +19,7 @@ const (
 type UserContext struct {
 	UserID string
 	Email  string
-	// Add more fields as needed (e.g., Role, Name, etc.)
+	Roles  []string
 }
 
 func AuthMiddleware(next http.Handler) http.Handler {
@@ -36,9 +38,18 @@ func AuthMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
+		// Fetch user roles from database
+		roles, err := db.GetUserRoles(r.Context(), jwtClaims.UserID)
+		if err != nil {
+			log.Printf("Error fetching user roles: %v", err)
+			// Continue with empty roles - don't block authentication
+			roles = []string{}
+		}
+
 		userCtx := &UserContext{
 			UserID: jwtClaims.UserID,
 			Email:  jwtClaims.Email,
+			Roles:  roles,
 		}
 
 		ctx := context.WithValue(r.Context(), userContextKey, userCtx)

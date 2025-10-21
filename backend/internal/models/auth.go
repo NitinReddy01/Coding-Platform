@@ -50,3 +50,9 @@ type RefreshResponse struct {
 type ErrorResponse struct {
 	Message string `json:"message"`
 }
+
+// UserProfile represents a user profile with roles
+type UserProfile struct {
+	User  User     `json:"user"`
+	Roles []string `json:"roles"`
+}

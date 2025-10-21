@@ -1,18 +1,23 @@
 import { useEffect } from 'react';
-import { ListTodo } from 'lucide-react';
+import { ListTodo, Plus } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Navbar } from '../components/layout/Navbar';
 import { Footer } from '../components/layout/Footer';
 import { ProblemsFilters } from '../components/problems/ProblemsFilters';
 import { ProblemsTable } from '../components/problems/ProblemsTable';
 import { ProblemsTableSkeleton } from '../components/problems/ProblemsTableSkeleton';
 import { Pagination, PaginationInfo } from '../components/ui/pagination';
+import { Button } from '../components/ui/button';
 import { useAppDispatch, useAppSelector } from '../store/store';
 import { fetchProblems, setPage } from '../store/slices/problemsSlice';
 import { useAxiosPrivate } from '../hooks/useAxiosPrivate';
+import { useAuth } from '../hooks/useAuth';
 
 export function ProblemsListPage() {
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
   const axiosPrivate = useAxiosPrivate();
+  const { hasAnyRole } = useAuth();
   const {
     problems,
     total,
@@ -47,11 +52,23 @@ export function ProblemsListPage() {
           <div className="absolute -bottom-10 -left-10 w-48 h-48 bg-gradient-success opacity-20 blur-3xl rounded-full animate-float" style={{ animationDelay: '1s' }} />
 
           <div className="relative">
-            <div className="flex items-center gap-4 mb-3">
-              <div className="p-3 rounded-xl icon-container-primary">
-                <ListTodo className="w-8 h-8 text-primary" />
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-4">
+                <div className="p-3 rounded-xl icon-container-primary">
+                  <ListTodo className="w-8 h-8 text-primary" />
+                </div>
+                <h1 className="text-4xl font-bold text-gradient-primary">Problems</h1>
               </div>
-              <h1 className="text-4xl font-bold text-gradient-primary">Problems</h1>
+              {/* Add Problem Button (Admin/Author only) */}
+              {hasAnyRole('admin', 'author') && (
+                <Button
+                  onClick={() => navigate('/problems/add')}
+                  className="flex items-center gap-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Add Problem</span>
+                </Button>
+              )}
             </div>
             <p className="text-muted-foreground text-lg">
               Practice coding problems to improve your algorithmic thinking and problem-solving skills.

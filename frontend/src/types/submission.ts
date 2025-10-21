@@ -1,30 +1,15 @@
 import type { TestCase } from "./problem";
 
-/**
- * User code submission for execution
- *
- * Contains the code, language, test cases, and resource limits
- * for executing user-submitted code in a sandboxed environment.
- */
 export interface Submission {
-  /** User's source code to be executed */
   code: string;
-  /** Programming language identifier (e.g., 'python', 'java', 'cpp') */
   language: string;
-  /** Test cases to run the code against */
+  problem_id: string;
   test_cases: TestCase[];
   /** Maximum execution time allowed in milliseconds */
   time_limit: number;
   /** Maximum memory allowed in megabytes */
   memory_limit: number;
 }
-
-/**
- * Result of executing code against a single test case
- *
- * Contains pass/fail status, actual vs expected output,
- * performance metrics, and error information if applicable.
- */
 export interface ExecutionResult {
   /** Index of the test case (0-based) */
   test_case_index: number;
