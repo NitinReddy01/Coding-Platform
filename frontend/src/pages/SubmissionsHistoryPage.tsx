@@ -1,5 +1,4 @@
 import { useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
 import { History } from 'lucide-react';
 import { Navbar } from '../components/layout/Navbar';
 import { Footer } from '../components/layout/Footer';
@@ -7,11 +6,11 @@ import { SubmissionsFilters } from '../components/submissions/SubmissionsFilters
 import { SubmissionsTable } from '../components/submissions/SubmissionsTable';
 import { ViewCodeModal } from '../components/submissions/ViewCodeModal';
 import { Pagination, PaginationInfo } from '../components/ui/pagination';
-import type { RootState } from '../store/store';
+import { useAppDispatch, useAppSelector } from '../store/store';
 import { fetchSubmissions, setPage } from '../store/slices/submissionsSlice';
 
 export function SubmissionsHistoryPage() {
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
   const {
     submissions,
     total,
@@ -24,7 +23,7 @@ export function SubmissionsHistoryPage() {
     selectedSubmission,
     isModalOpen,
     allSubmissions,
-  } = useSelector((state: RootState) => state.submissions);
+  } = useAppSelector((state) => state.submissions);
 
   // Fetch submissions on mount and when filters/sort/page change
   useEffect(() => {

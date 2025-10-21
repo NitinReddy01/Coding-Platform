@@ -1,5 +1,5 @@
 import { useEffect, useCallback } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../store/store';
 import { setCode } from '../store/slices/editorSlice';
 import { useProblem } from '../hooks/useProblem';
@@ -8,13 +8,25 @@ import { ProblemLayout } from '../components/layout/ProblemLayout';
 import type { Submission } from '../types';
 
 export function ProblemPage() {
-  const { id } = useParams<{ id: string }>();
+  const { title } = useParams<{ title: string }>();
+  const navigate = useNavigate();
   const dispatch = useAppDispatch();
 
-  // Hooks now manage their own state locally
-  const { problem, loading, error } = useProblem("Two Sum", 'practice');
-  const { results, isRunning, isSubmitting, error: submissionError, runCode, submitCode } = useSubmission(true);
+  // Redirect to problems list if no problem title in URL
+  useEffect(() => {
+    if (!title) {
+      navigate('/problems', { replace: true });
+    }
+  }, [title, navigate]);
+
+  // Decode the URL parameter (URL-encoded title)
+  const problemTitle = title ? decodeURIComponent(title) : '';
+
+  // Fetch problem using the title from URL
+  const { problem, loading, error } = useProblem(problemTitle, 'practice');
+  const { results, isRunning, isSubmitting, error: submissionError, runCode, submitCode } = useSubmission(false);
   const { code, language, languages } = useAppSelector((state) => state.editor);
+
   // Set default code when component mounts or language changes
   useEffect(() => {
     if (!code && languages.length > 0) {

@@ -1,6 +1,5 @@
 import { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
 import { User } from 'lucide-react';
 import { Navbar } from '../components/layout/Navbar';
 import { Footer } from '../components/layout/Footer';
@@ -9,13 +8,13 @@ import { StatsCards } from '../components/profile/StatsCards';
 import { SolvedProblemsTab } from '../components/profile/SolvedProblemsTab';
 import { RecentActivityTab } from '../components/profile/RecentActivityTab';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs';
-import type { RootState } from '../store/store';
+import { useAppDispatch, useAppSelector } from '../store/store';
 import { fetchUserProfile, setActiveTab } from '../store/slices/userSlice';
 
 export function ProfilePage() {
   const { username } = useParams<{ username: string }>();
-  const dispatch = useDispatch();
-  const { profile, stats, solvedProblems, loading, activeTab } = useSelector((state: RootState) => state.user);
+  const dispatch = useAppDispatch();
+  const { profile, stats, solvedProblems, loading, activeTab } = useAppSelector((state) => state.user);
 
   useEffect(() => {
     dispatch(fetchUserProfile(username));

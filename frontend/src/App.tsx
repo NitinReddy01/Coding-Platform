@@ -27,7 +27,7 @@ function AppRoutes() {
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/problems" element={<ProblemsListPage />} />
-          <Route path="/problems/:id" element={<ProblemPage />} />
+          <Route path="/problems/:title" element={<ProblemPage />} />
           <Route path="/submissions" element={<SubmissionsHistoryPage />} />
           <Route path="/profile/:username" element={<ProfilePage />} />
           {/* Add more protected routes here in the future */}

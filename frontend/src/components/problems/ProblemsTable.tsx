@@ -1,6 +1,6 @@
-import { useDispatch } from 'react-redux';
+import { useAppDispatch } from '../../store/store';
 import { useNavigate } from 'react-router-dom';
-import { ChevronUp, ChevronDown, CheckCircle2, Circle, AlertCircle } from 'lucide-react';
+import { ChevronUp, ChevronDown } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import type { ProblemListItem, SortField } from '../../types/problemList';
 import type { ProblemSort } from '../../types/problemList';
@@ -10,24 +10,28 @@ import { cn } from '../../lib/utils';
 interface ProblemsTableProps {
   problems: ProblemListItem[];
   sort: ProblemSort;
+  currentPage: number;
+  pageSize: number;
 }
 
-export function ProblemsTable({ problems, sort }: ProblemsTableProps) {
-  const dispatch = useDispatch();
+export function ProblemsTable({ problems, sort, currentPage, pageSize }: ProblemsTableProps) {
+  const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
   const handleSort = (field: SortField) => {
     dispatch(toggleSort(field));
   };
 
-  const handleRowClick = (problemId: string) => {
-    navigate(`/problems/${problemId}`);
+  const handleRowClick = (problemTitle: string) => {
+    // URL encode the title to handle spaces and special characters
+    navigate(`/problems/${encodeURIComponent(problemTitle)}`);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent, problemId: string) => {
+  const handleKeyDown = (e: React.KeyboardEvent, problemTitle: string) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
-      navigate(`/problems/${problemId}`);
+      // URL encode the title to handle spaces and special characters
+      navigate(`/problems/${encodeURIComponent(problemTitle)}`);
     }
   };
 
@@ -40,27 +44,6 @@ export function ProblemsTable({ problems, sort }: ProblemsTableProps) {
     ) : (
       <ChevronDown className="w-4 h-4 text-primary" />
     );
-  };
-
-  const StatusIcon = ({ status }: { status: ProblemListItem['solve_status'] }) => {
-    switch (status) {
-      case 'solved':
-        return (
-          <div className="relative">
-            <div className="absolute inset-0 bg-success opacity-20 blur-md rounded-full" />
-            <CheckCircle2 className="w-6 h-6 text-success relative" />
-          </div>
-        );
-      case 'attempted':
-        return (
-          <div className="relative">
-            <div className="absolute inset-0 bg-warning opacity-20 blur-md rounded-full" />
-            <AlertCircle className="w-6 h-6 text-warning relative" />
-          </div>
-        );
-      case 'unsolved':
-        return <Circle className="w-5 h-5 text-muted-foreground" />;
-    }
   };
 
   const DifficultyBadge = ({ difficulty }: { difficulty: ProblemListItem['difficulty'] }) => {
@@ -90,24 +73,9 @@ export function ProblemsTable({ problems, sort }: ProblemsTableProps) {
       <table className="w-full border-collapse">
         <thead className="bg-gradient-to-r from-primary/10 via-accent/10 to-success/10">
           <tr className="border-b border-primary/20">
-            {/* Status */}
+            {/* Serial Number */}
             <th className="px-4 py-3 text-left">
-              <span className="text-sm font-medium text-muted-text">Status</span>
-            </th>
-
-            {/* ID */}
-            <th
-              className="px-4 py-3 text-left cursor-pointer group hover:bg-muted/50 transition-colors"
-              onClick={() => handleSort('id')}
-              role="button"
-              tabIndex={0}
-              aria-label="Sort by ID"
-              onKeyDown={(e) => e.key === 'Enter' && handleSort('id')}
-            >
-              <div className="flex items-center gap-1">
-                <span className="text-sm font-medium text-muted-text">#</span>
-                <SortIcon field="id" />
-              </div>
+              <span className="text-sm font-medium text-muted-text">#</span>
             </th>
 
             {/* Title */}
@@ -154,33 +122,25 @@ export function ProblemsTable({ problems, sort }: ProblemsTableProps) {
                 <SortIcon field="acceptance_rate" />
               </div>
             </th>
-
-            {/* Tags */}
-            <th className="px-4 py-3 text-left hidden lg:table-cell">
-              <span className="text-sm font-medium text-muted-text">Tags</span>
-            </th>
           </tr>
         </thead>
         <tbody>
-          {problems.map((problem) => (
-            <tr
-              key={problem.id}
-              onClick={() => handleRowClick(problem.id)}
-              onKeyDown={(e) => handleKeyDown(e, problem.id)}
-              tabIndex={0}
-              role="button"
-              aria-label={`View problem: ${problem.title}`}
-              className="border-b border-border hover:bg-gradient-to-r hover:from-primary/5 hover:via-transparent hover:to-success/5 hover:shadow-glow-sm focus:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-primary/50 cursor-pointer transition-all duration-300 group"
-            >
-              {/* Status */}
-              <td className="px-4 py-4">
-                <StatusIcon status={problem.solve_status} />
-              </td>
-
-              {/* ID */}
-              <td className="px-4 py-4">
-                <span className="text-sm font-medium text-muted-text">{problem.id}</span>
-              </td>
+          {problems.map((problem, index) => {
+            const serialNumber = (currentPage - 1) * pageSize + index + 1;
+            return (
+              <tr
+                key={problem.id}
+                onClick={() => handleRowClick(problem.title)}
+                onKeyDown={(e) => handleKeyDown(e, problem.title)}
+                tabIndex={0}
+                role="button"
+                aria-label={`View problem: ${problem.title}`}
+                className="border-b border-border hover:bg-gradient-to-r hover:from-primary/5 hover:via-transparent hover:to-success/5 hover:shadow-glow-sm focus:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-primary/50 cursor-pointer transition-all duration-300 group"
+              >
+                {/* Serial Number */}
+                <td className="px-4 py-4">
+                  <span className="text-sm font-medium text-muted-text">{serialNumber}</span>
+                </td>
 
               {/* Title */}
               <td className="px-4 py-4">
@@ -198,24 +158,9 @@ export function ProblemsTable({ problems, sort }: ProblemsTableProps) {
               <td className="px-4 py-4">
                 <span className="text-sm text-muted-text">{problem.acceptance_rate}%</span>
               </td>
-
-              {/* Tags */}
-              <td className="px-4 py-4 hidden lg:table-cell">
-                <div className="flex flex-wrap gap-1">
-                  {problem.tags.slice(0, 3).map((tag) => (
-                    <Badge key={tag.id} variant="secondary" className="text-xs">
-                      {tag.name}
-                    </Badge>
-                  ))}
-                  {problem.tags.length > 3 && (
-                    <Badge variant="secondary" className="text-xs">
-                      +{problem.tags.length - 3}
-                    </Badge>
-                  )}
-                </div>
-              </td>
             </tr>
-          ))}
+            );
+          })}
         </tbody>
       </table>
     </div>

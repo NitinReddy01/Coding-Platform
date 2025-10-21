@@ -28,7 +28,7 @@ export const LoginPage: React.FC = () => {
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/problems/1');
+      navigate('/problems');
     }
   }, [isAuthenticated, navigate]);
 

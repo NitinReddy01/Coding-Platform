@@ -1,4 +1,4 @@
-import { useDispatch } from 'react-redux';
+import { useAppDispatch } from '../../store/store';
 import { X, CheckCircle2, XCircle, AlertTriangle, Clock, Zap, Code2 } from 'lucide-react';
 import { Modal, ModalHeader, ModalBody } from '../ui/modal';
 import { Badge } from '../ui/badge';
@@ -13,7 +13,7 @@ interface ViewCodeModalProps {
 }
 
 export function ViewCodeModal({ isOpen, submission }: ViewCodeModalProps) {
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
 
   if (!submission) return null;
 

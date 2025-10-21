@@ -168,14 +168,14 @@ func HandleLogin(w http.ResponseWriter, r *http.Request) {
 	accessToken, err := lib.GenerateAccessToken(user.ID, user.Email)
 	if err != nil {
 		log.Printf("Error generating access token: %v", err)
-		lib.JSONError(w, http.StatusInternalServerError, "Internal server error")
+		lib.InternalErrorHandler(w)
 		return
 	}
 
 	refreshToken, err := lib.GenerateRefreshToken(user.ID)
 	if err != nil {
 		log.Printf("Error generating refresh token: %v", err)
-		lib.JSONError(w, http.StatusInternalServerError, "Internal server error")
+		lib.InternalErrorHandler(w)
 		return
 	}
 
@@ -187,7 +187,7 @@ func HandleLogin(w http.ResponseWriter, r *http.Request) {
 	err = db.SaveRefreshToken(ctx, user.ID, tokenHash, expiresAt, deviceInfo)
 	if err != nil {
 		log.Printf("Error saving refresh token: %v", err)
-		lib.JSONError(w, http.StatusInternalServerError, "Internal server error")
+		lib.InternalErrorHandler(w)
 		return
 	}
 
@@ -250,7 +250,7 @@ func HandleRefresh(w http.ResponseWriter, r *http.Request) {
 	accessToken, err := lib.GenerateAccessToken(user.ID, user.Email)
 	if err != nil {
 		log.Printf("Error generating access token: %v", err)
-		lib.JSONError(w, http.StatusInternalServerError, "Internal server error")
+		lib.InternalErrorHandler(w)
 		return
 	}
 
