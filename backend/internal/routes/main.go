@@ -4,6 +4,7 @@ import (
 	"app/internal/lib"
 	"app/internal/middlewares"
 	"app/internal/routes/auth"
+	"app/internal/routes/mail"
 	"app/internal/routes/problems"
 	"net/http"
 
@@ -31,6 +32,7 @@ func New(allowedOrigins []string) *chi.Mux {
 			private.Use(middlewares.AuthMiddleware)
 
 			private.Mount("/problems", problems.ProblemRoutes())
+			private.Mount("/mails", mail.MailRoutes())
 		})
 	})
 
