@@ -5,6 +5,7 @@ import (
 	"app/internal/lib/types"
 	"app/internal/services"
 	"encoding/json"
+	"log"
 	"net/http"
 )
 
@@ -19,6 +20,7 @@ func handleSendMail(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := services.SendMail(req.To, req.Subject, req.Message, req.IsHTML); err != nil {
+		log.Printf("Error when sending mail %v", err)
 		lib.InternalErrorHandler(w)
 		return
 	}
