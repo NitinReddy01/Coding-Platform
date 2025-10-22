@@ -14,17 +14,16 @@ func handleSendMail(w http.ResponseWriter, r *http.Request) {
 
 	// Decode the JSON request body into req
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		lib.JSONError(w, http.StatusInternalServerError, "Missing fields in request body")
+		lib.JSONError(w, http.StatusBadRequest, "Missing fields in request body")
 		return
 	}
 
 	if err := services.SendMail(req.To, req.Subject, req.Message, req.IsHTML); err != nil {
-		lib.JSONError(w, http.StatusInternalServerError, err.Error())
+		lib.InternalErrorHandler(w)
 		return
 	}
 
-	lib.JSON(w, http.StatusCreated, map[string]any{
+	lib.JSON(w, http.StatusOK, map[string]string{
 		"message": "Email sent successfully",
-		"status":  http.StatusOK,
 	})
 }
