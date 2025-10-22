@@ -15,8 +15,11 @@ import { useRefreshToken } from '../../hooks/useRefreshToken';
 import { useAuth } from '../../hooks/useAuth';
 import { useAppSelector, useAppDispatch } from '../../store/store';
 import { setLanguages, setLanguagesLoading, setLanguagesError } from '../../store/slices/editorSlice';
+import { setUserProfile } from '../../store/slices/authSlice';
 import { fetchLanguages } from '../../api/problems';
+import { getCurrentUser } from '../../api/auth';
 import { useAxiosPrivate } from '../../hooks/useAxiosPrivate';
+import { getErrorMessage } from '../../utils/errorHandler';
 
 /**
  * Persist login wrapper
@@ -93,6 +96,27 @@ export const PersistLogin: React.FC = () => {
   }, [user, persist, accessToken, refresh]);
 
   /**
+   * Fetch user profile with roles when authenticated
+   */
+  useEffect(() => {
+    const loadUserProfile = async () => {
+      // Only fetch if user is authenticated but doesn't have roles loaded
+      if (!accessToken || !user || user.roles) return;
+
+      try {
+        const { user: userProfile, roles } = await getCurrentUser(axios);
+        // Update user with roles
+        dispatch(setUserProfile({ ...userProfile, roles }));
+      } catch (error) {
+        console.error('Failed to fetch user profile:', error);
+        // Don't block the app if profile fetch fails
+      }
+    };
+
+    loadUserProfile();
+  }, [accessToken, user, dispatch]);
+
+  /**
    * Fetch languages when user is authenticated and languages haven't been loaded
    */
   useEffect(() => {
@@ -105,7 +129,7 @@ export const PersistLogin: React.FC = () => {
         const fetchedLanguages = await fetchLanguages(axios);
         dispatch(setLanguages(fetchedLanguages));
       } catch (error) {
-        const message = error instanceof Error ? error.message : 'Failed to load languages';
+        const message = getErrorMessage(error, 'Failed to load languages');
         dispatch(setLanguagesError(message));
         console.error('Failed to fetch languages:', error);
       }

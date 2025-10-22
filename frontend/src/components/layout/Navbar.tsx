@@ -1,5 +1,5 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
+import { useAppDispatch, useAppSelector } from '../../store/store';
 import {
   Code2,
   Search,
@@ -13,14 +13,13 @@ import {
 import { Avatar } from '../ui/avatar';
 import { Dropdown } from '../ui/dropdown';
 import { logout } from '../../store/slices/authSlice';
-import type { RootState } from '../../store/store';
 import { cn } from '../../lib/utils';
 
 export function Navbar() {
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const location = useLocation();
-  const user = useSelector((state: RootState) => state.auth.user);
+  const user = useAppSelector((state) => state.auth.user);
 
   const handleLogout = () => {
     dispatch(logout());

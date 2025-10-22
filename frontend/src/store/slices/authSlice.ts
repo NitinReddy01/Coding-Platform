@@ -166,9 +166,28 @@ const authSlice = createSlice({
       state.persist = action.payload;
       savePersistToStorage(action.payload);
     },
+
+    /**
+     * Update user profile with roles
+     *
+     * Updates the user data (including roles) after fetching from /auth/me.
+     * Useful for loading user profile on app mount or after role changes.
+     *
+     * @param payload - User profile data with roles
+     */
+    setUserProfile: (state, action: PayloadAction<User>) => {
+      state.user = action.payload;
+      saveUserToStorage(action.payload);
+    },
   },
 });
 
-export const { setCredentials, setAccessToken, logout, setLoading, setPersist } =
-  authSlice.actions;
+export const {
+  setCredentials,
+  setAccessToken,
+  logout,
+  setLoading,
+  setPersist,
+  setUserProfile,
+} = authSlice.actions;
 export default authSlice.reducer;

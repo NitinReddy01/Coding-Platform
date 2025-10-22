@@ -5,15 +5,72 @@ import (
 	"context"
 	"fmt"
 	"log"
+
+	"github.com/jackc/pgx/v5"
 )
 
-func AddProblem(ctx context.Context, problem models.ProblemInput) error {
+func AddProblem(ctx context.Context, problem models.ProblemInput, authorID string, status models.RequestStatus) error {
+	// Start a transaction to ensure all inserts succeed or fail together
+	tx, err := Pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback(ctx) // Rollback if not committed
 
-	query := "INSERT INTO problems(title,description,difficulty,author_id,status,reviewed_by, reviewed_at, time_limit, memory_limit, constraints) VALUES($1,$2, $3,$4,$5,$6,$7,$8,$9,$10)"
+	// Insert the problem and get the generated ID
+	var problemID string
+	problemQuery := `
+		INSERT INTO problems(
+			title, description, difficulty, author_id, status,
+			time_limit, memory_limit, constraints, input_description, output_description
+		) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+		RETURNING id
+	`
 
-	_, err := Pool.Exec(ctx, query, problem.Title, problem.Description, problem.Difficulty, problem.AuthorID, problem.Status, problem.TimeLimit, problem.MemoryLimit, problem.Constraints)
+	err = tx.QueryRow(ctx, problemQuery,
+		problem.Title,
+		problem.Description,
+		problem.Difficulty,
+		authorID,
+		status,
+		problem.TimeLimit,
+		problem.MemoryLimit,
+		problem.Constraints,
+		problem.InputDescription,
+		problem.OutputDescription,
+	).Scan(&problemID)
 
-	return err
+	if err != nil {
+		return fmt.Errorf("failed to insert problem: %w", err)
+	}
+
+	// Insert test cases
+	if len(problem.TestCases) > 0 {
+		err = insertTestCases(ctx, tx, problemID, problem.TestCases)
+		if err != nil {
+			return fmt.Errorf("failed to insert test cases: %w", err)
+		}
+	}
+
+	// Handle tags: get or create tags, then link to problem
+	if len(problem.Tags) > 0 {
+		tagIDs, err := upsertTags(ctx, tx, problem.Tags)
+		if err != nil {
+			return fmt.Errorf("failed to upsert tags: %w", err)
+		}
+
+		err = linkProblemTags(ctx, tx, problemID, tagIDs)
+		if err != nil {
+			return fmt.Errorf("failed to link problem tags: %w", err)
+		}
+	}
+
+	// Commit the transaction
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return nil
 }
 
 func ProblemExists(ctx context.Context, title string) (bool, error) {
@@ -46,7 +103,6 @@ func fetchTestCases(ctx context.Context, problemID string, sample bool) ([]model
 	var testCases []models.TestCase
 	for rows.Next() {
 		var tc models.TestCase
-		var createdAt *string
 
 		err := rows.Scan(
 			&tc.ID,
@@ -56,7 +112,7 @@ func fetchTestCases(ctx context.Context, problemID string, sample bool) ([]model
 			&tc.IsSample,
 			&tc.OrderIndex,
 			&tc.Explanation,
-			&createdAt,
+			&tc.CreatedAt,
 		)
 		if err != nil {
 			log.Printf("Warning: failed to scan test case: %v", err)
@@ -114,7 +170,7 @@ func GetProblem(ctx context.Context, title string, sample bool) (*models.Problem
 		SELECT
 			id, title, description, difficulty,
 			created_at, updated_at, time_limit, memory_limit,
-			constraints, submissions, accepted
+			constraints, submissions, accepted, input_description, output_description
 		FROM problems
 		WHERE title = $1 AND status = 'approved'
 	`
@@ -132,6 +188,8 @@ func GetProblem(ctx context.Context, title string, sample bool) (*models.Problem
 		&constraints,
 		&problem.Submissions,
 		&problem.Accepted,
+		&problem.InputDescription,
+		&problem.OutputDescription,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch problem: %w", err)
@@ -181,7 +239,7 @@ func GetProblemForAdmin(ctx context.Context, title string, sample bool) (*models
 		SELECT
 			id, title, description, difficulty, author_id, status,
 			reviewed_by, reviewed_at, created_at, updated_at,
-			time_limit, memory_limit, constraints, submissions, accepted
+			time_limit, memory_limit, constraints, submissions, accepted, input_description, output_description
 		FROM problems
 		WHERE title = $1
 	`
@@ -203,6 +261,8 @@ func GetProblemForAdmin(ctx context.Context, title string, sample bool) (*models
 		&constraints,
 		&problem.Submissions,
 		&problem.Accepted,
+		&problem.InputDescription,
+		&problem.OutputDescription,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch problem: %w", err)
@@ -244,4 +304,128 @@ func GetProblemForAdmin(ctx context.Context, title string, sample bool) (*models
 	}
 
 	return &problem, nil
+}
+
+func FecthProblems(ctx context.Context, offset uint16, limit uint8) (*models.PaginatedProblems, error) {
+	query := `
+		SELECT
+			id, title, difficulty, accepted, submissions,
+			CASE
+				WHEN submissions > 0
+				THEN ROUND((accepted::decimal / submissions) * 100, 2)
+				ELSE 0
+   			END AS acceptance_percentage
+		FROM problems
+		where status = 'approved'
+		ORDER BY created_at ASC
+		LIMIT $1 OFFSET $2
+	`
+
+	problemRows, err := Pool.Query(ctx, query, limit, offset)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch tags: %w", err)
+	}
+	defer problemRows.Close()
+
+	problems := make([]models.ProblemListItem, 0, limit)
+
+	for problemRows.Next() {
+		var problem models.ProblemListItem
+
+		if err := problemRows.Scan(&problem.ID, &problem.Title, &problem.Difficulty, &problem.Acceptance, &problem.Submissions, &problem.AcceptancePercentage); err != nil {
+			return nil, fmt.Errorf("failed to fetch problem: %w", err)
+		}
+
+		problems = append(problems, problem)
+	}
+
+	if err := problemRows.Err(); err != nil {
+		return nil, fmt.Errorf("iteration error: %w", err)
+	}
+
+	var total uint16
+
+	err = Pool.QueryRow(ctx, `
+		SELECT COUNT(*)
+		FROM problems
+		WHERE status = 'approved'
+	`).Scan(&total)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to count problems: %w", err)
+	}
+
+	paginatedProblems := &models.PaginatedProblems{
+		Problems: problems,
+		Total:    total,
+		Page:     1,
+		Limit:    limit,
+	}
+
+	return paginatedProblems, nil
+}
+
+// insertTestCases inserts test cases for a problem within a transaction
+func insertTestCases(ctx context.Context, tx pgx.Tx, problemID string, testCases []models.TestCase) error {
+	testCaseQuery := `
+		INSERT INTO test_cases(
+			problem_id, input, expected_output, is_sample, order_index, explanation
+		) VALUES($1, $2, $3, $4, $5, $6)
+	`
+
+	for _, tc := range testCases {
+		_, err := tx.Exec(ctx, testCaseQuery,
+			problemID,
+			tc.Input,
+			tc.ExpectedOutput,
+			tc.IsSample,
+			tc.OrderIndex,
+			tc.Explanation,
+		)
+		if err != nil {
+			return fmt.Errorf("failed to insert test case: %w", err)
+		}
+	}
+
+	return nil
+}
+
+// upsertTags gets existing tag IDs or creates new tags, returns all tag IDs
+func upsertTags(ctx context.Context, tx pgx.Tx, tagNames []string) ([]string, error) {
+	tagIDs := make([]string, 0, len(tagNames))
+
+	for _, tagName := range tagNames {
+		var tagID string
+
+		// Try to get existing tag
+		selectQuery := `SELECT id FROM tags WHERE name = $1`
+		err := tx.QueryRow(ctx, selectQuery, tagName).Scan(&tagID)
+
+		if err != nil {
+			// Tag doesn't exist, create it
+			insertQuery := `INSERT INTO tags(name) VALUES($1) RETURNING id`
+			err = tx.QueryRow(ctx, insertQuery, tagName).Scan(&tagID)
+			if err != nil {
+				return nil, fmt.Errorf("failed to insert tag '%s': %w", tagName, err)
+			}
+		}
+
+		tagIDs = append(tagIDs, tagID)
+	}
+
+	return tagIDs, nil
+}
+
+// linkProblemTags creates associations between a problem and tags
+func linkProblemTags(ctx context.Context, tx pgx.Tx, problemID string, tagIDs []string) error {
+	linkQuery := `INSERT INTO problem_tags(problem_id, tag_id) VALUES($1, $2)`
+
+	for _, tagID := range tagIDs {
+		_, err := tx.Exec(ctx, linkQuery, problemID, tagID)
+		if err != nil {
+			return fmt.Errorf("failed to link tag %s to problem: %w", tagID, err)
+		}
+	}
+
+	return nil
 }

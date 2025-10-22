@@ -5,6 +5,7 @@ import { store } from './store/store';
 import { DashboardPage } from './pages/DashboardPage';
 import { ProblemPage } from './pages/ProblemPage';
 import { ProblemsListPage } from './pages/ProblemsListPage';
+import { AddProblemPage } from './pages/AddProblemPage';
 import { SubmissionsHistoryPage } from './pages/SubmissionsHistoryPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { LoginPage } from './pages/LoginPage';
@@ -27,7 +28,8 @@ function AppRoutes() {
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/problems" element={<ProblemsListPage />} />
-          <Route path="/problems/:id" element={<ProblemPage />} />
+          <Route path="/problems/add" element={<AddProblemPage />} />
+          <Route path="/problems/:title" element={<ProblemPage />} />
           <Route path="/submissions" element={<SubmissionsHistoryPage />} />
           <Route path="/profile/:username" element={<ProfilePage />} />
           {/* Add more protected routes here in the future */}

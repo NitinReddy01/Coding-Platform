@@ -1,9 +1,8 @@
-import { useDispatch, useSelector } from 'react-redux';
+import { useAppDispatch, useAppSelector } from '../../store/store';
 import { Search, X, Filter } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { Select } from '../ui/dropdown';
 import { Button } from '../ui/button';
-import type { RootState } from '../../store/store';
 import {
   setSearch,
   setDifficulty,
@@ -20,8 +19,8 @@ interface ProblemsFiltersProps {
 }
 
 export function ProblemsFilters({ className }: ProblemsFiltersProps) {
-  const dispatch = useDispatch();
-  const { filters } = useSelector((state: RootState) => state.problems);
+  const dispatch = useAppDispatch();
+  const { filters } = useAppSelector((state) => state.problems);
   const allTags = getAllTags();
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {

@@ -14,6 +14,7 @@ import { Input } from '../components/ui/Input';
 import { Label } from '../components/ui/Label';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
+import { getErrorMessage } from '../utils/errorHandler';
 
 
 export const LoginPage: React.FC = () => {
@@ -28,7 +29,7 @@ export const LoginPage: React.FC = () => {
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/problems/1');
+      navigate('/problems');
     }
   }, [isAuthenticated, navigate]);
 
@@ -49,7 +50,8 @@ export const LoginPage: React.FC = () => {
       await login({ email, password });
       // Navigation handled by useAuth hook
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login failed. Please try again.');
+      const errorMessage = getErrorMessage(err, 'Login failed. Please try again.');
+      setError(errorMessage);
     }
   };
 

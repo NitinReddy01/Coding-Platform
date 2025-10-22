@@ -9,6 +9,8 @@
 
 import type { AxiosInstance } from 'axios';
 import type { Language, Problem, ProblemMode } from '../types';
+import type { PaginatedProblemsResponse } from '../types/problemList';
+import type { ProblemInput } from '../types/problem-form';
 
 /**
  * Fetches a single problem by its ID
@@ -77,3 +79,63 @@ export const fetchLanguages = async (axios:AxiosInstance,): Promise<Language[]> 
   const response = await axios.get<Language[]>('/problems/languages');
   return response.data;
 }
+
+/**
+ * Fetches a paginated list of problems
+ *
+ * @param axiosInstance - Axios instance (use useAxiosPrivate hook)
+ * @param page - Page number (1-indexed, defaults to 1)
+ * @param limit - Number of items per page (defaults to 20)
+ * @returns Promise resolving to paginated problems response
+ * @throws Error if the network request fails
+ *
+ * @example
+ * ```typescript
+ * const axiosPrivate = useAxiosPrivate();
+ * const response = await fetchProblemsList(axiosPrivate, 1, 20);
+ * console.log(response.problems); // Array of problems
+ * console.log(response.total); // Total count
+ * ```
+ */
+export const fetchProblemsList = async (
+  axiosInstance: AxiosInstance,
+  page: number = 1,
+  limit: number = 20
+): Promise<PaginatedProblemsResponse> => {
+  const response = await axiosInstance.get<PaginatedProblemsResponse>('/problems', {
+    params: { page, limit },
+  });
+  return response.data;
+};
+
+/**
+ * Creates a new problem
+ *
+ * @param axiosInstance - Axios instance (use useAxiosPrivate hook)
+ * @param problemData - Problem data including title, description, test cases, tags, etc.
+ * @returns Promise that resolves when the problem is created
+ * @throws Error if the creation fails or validation errors occur
+ *
+ * @example
+ * ```typescript
+ * const axiosPrivate = useAxiosPrivate();
+ * const problemData = {
+ *   title: "Two Sum",
+ *   description: "Find two numbers that add up to target",
+ *   difficulty: "easy",
+ *   author_id: userId,
+ *   status: "pending",
+ *   time_limit: 2000,
+ *   memory_limit: 256,
+ *   test_cases: [...],
+ *   tags: ["array", "hash-table"],
+ * };
+ * await createProblem(axiosPrivate, problemData);
+ * ```
+ */
+export const createProblem = async (
+  axiosInstance: AxiosInstance,
+  problemData: ProblemInput
+): Promise<void> => {
+  await axiosInstance.post('/problems', problemData);
+};

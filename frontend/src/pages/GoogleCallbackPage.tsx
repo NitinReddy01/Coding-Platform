@@ -14,6 +14,7 @@ import { useAppDispatch } from '../store/store';
 import { setCredentials } from '../store/slices/authSlice';
 import { handleGoogleCallback } from '../api/auth';
 import { Card } from '../components/ui/card';
+import { getErrorMessage } from '../utils/errorHandler';
 
 
 export const GoogleCallbackPage: React.FC = () => {
@@ -42,11 +43,8 @@ export const GoogleCallbackPage: React.FC = () => {
         navigate('/problems/1', { replace: true });
       } catch (err) {
         console.error('Google OAuth callback error:', err);
-        setError(
-          err instanceof Error
-            ? err.message
-            : 'Failed to complete Google sign-in'
-        );
+        const errorMessage = getErrorMessage(err, 'Failed to complete Google sign-in');
+        setError(errorMessage);
       }
     };
 

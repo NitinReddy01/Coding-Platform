@@ -1,6 +1,8 @@
 package problems
 
 import (
+	"app/internal/middlewares"
+
 	"github.com/go-chi/chi/v5"
 )
 
@@ -8,7 +10,8 @@ func ProblemRoutes() *chi.Mux {
 
 	r := chi.NewRouter()
 
-	r.Post("/", AddProblem)
+	r.With(middlewares.Paginate).Get("/", FecthProblems)
+	r.With(middlewares.RequireRole("admin", "author")).Post("/", AddProblem)
 	r.Get("/languages", GetLanguages)
 	r.Get("/{title}", GetProblemByTitle)
 
