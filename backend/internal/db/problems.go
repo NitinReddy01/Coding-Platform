@@ -1,6 +1,7 @@
 package db
 
 import (
+	"app/internal/lib/types"
 	"app/internal/models"
 	"context"
 	"fmt"
@@ -9,7 +10,7 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-func AddProblem(ctx context.Context, problem models.ProblemInput, authorID string, status models.RequestStatus) error {
+func AddProblem(ctx context.Context, problem types.ProblemInput, authorID string, status models.RequestStatus) error {
 	// Start a transaction to ensure all inserts succeed or fail together
 	tx, err := Pool.Begin(ctx)
 	if err != nil {
@@ -84,7 +85,7 @@ func ProblemExists(ctx context.Context, title string) (bool, error) {
 }
 
 // fetchTestCases fetches test cases for a given problem
-func fetchTestCases(ctx context.Context, problemID string, sample bool) ([]models.TestCase, error) {
+func FetchTestCases(ctx context.Context, problemID string, sample bool) ([]models.TestCase, error) {
 	testCaseQuery := `
 		SELECT
 			id, problem_id, input, expected_output,
@@ -198,7 +199,7 @@ func GetProblem(ctx context.Context, title string, sample bool) (*models.Problem
 	problem.Constraints = constraints
 
 	// Fetch test cases
-	testCases, err := fetchTestCases(ctx, problem.ID, sample)
+	testCases, err := FetchTestCases(ctx, problem.ID, sample)
 	if err != nil {
 		return nil, err
 	}
@@ -274,7 +275,7 @@ func GetProblemForAdmin(ctx context.Context, title string, sample bool) (*models
 	problem.Constraints = constraints
 
 	// Fetch test cases
-	testCases, err := fetchTestCases(ctx, problem.ID, sample)
+	testCases, err := FetchTestCases(ctx, problem.ID, sample)
 	if err != nil {
 		return nil, err
 	}
@@ -306,7 +307,17 @@ func GetProblemForAdmin(ctx context.Context, title string, sample bool) (*models
 	return &problem, nil
 }
 
-func FecthProblems(ctx context.Context, offset uint16, limit uint8) (*models.PaginatedProblems, error) {
+// GetProblemLimits fetches time and memory limits for a problem by ID
+func GetProblemLimits(ctx context.Context, problemID string) (timeLimit int, memoryLimit int, err error) {
+	query := `SELECT time_limit, memory_limit FROM problems WHERE id = $1`
+	err = Pool.QueryRow(ctx, query, problemID).Scan(&timeLimit, &memoryLimit)
+	if err != nil {
+		return 0, 0, fmt.Errorf("failed to fetch problem limits: %w", err)
+	}
+	return timeLimit, memoryLimit, nil
+}
+
+func FecthProblems(ctx context.Context, offset uint16, limit uint8) (*types.PaginatedProblems, error) {
 	query := `
 		SELECT
 			id, title, difficulty, accepted, submissions,
@@ -327,10 +338,10 @@ func FecthProblems(ctx context.Context, offset uint16, limit uint8) (*models.Pag
 	}
 	defer problemRows.Close()
 
-	problems := make([]models.ProblemListItem, 0, limit)
+	problems := make([]types.ProblemListItem, 0, limit)
 
 	for problemRows.Next() {
-		var problem models.ProblemListItem
+		var problem types.ProblemListItem
 
 		if err := problemRows.Scan(&problem.ID, &problem.Title, &problem.Difficulty, &problem.Acceptance, &problem.Submissions, &problem.AcceptancePercentage); err != nil {
 			return nil, fmt.Errorf("failed to fetch problem: %w", err)
@@ -355,7 +366,7 @@ func FecthProblems(ctx context.Context, offset uint16, limit uint8) (*models.Pag
 		return nil, fmt.Errorf("failed to count problems: %w", err)
 	}
 
-	paginatedProblems := &models.PaginatedProblems{
+	paginatedProblems := &types.PaginatedProblems{
 		Problems: problems,
 		Total:    total,
 		Page:     1,

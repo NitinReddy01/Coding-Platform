@@ -3,6 +3,7 @@ package problems
 import (
 	"app/internal/db"
 	"app/internal/lib"
+	"app/internal/lib/types"
 	"app/internal/middlewares"
 	"app/internal/models"
 	"encoding/json"
@@ -31,7 +32,7 @@ func GetProblemByTitle(w http.ResponseWriter, r *http.Request) {
 		lib.JSONError(w, http.StatusBadRequest, "Invalid Mode")
 		return
 	}
-	problemMode := models.ProblemMode(mode)
+	problemMode := types.ProblemMode(mode)
 
 	if !problemMode.IsValid() {
 		lib.JSONError(w, http.StatusBadRequest, "Invalid Mode")
@@ -39,7 +40,7 @@ func GetProblemByTitle(w http.ResponseWriter, r *http.Request) {
 	}
 	ctx := r.Context()
 
-	if problemMode == models.Edit {
+	if problemMode == types.Edit {
 		problem, err := db.GetProblemForAdmin(ctx, title, false)
 		if err != nil {
 			log.Printf("Error while fetching problem for admin: %v", err)
@@ -79,8 +80,8 @@ func AddProblem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var problemData models.ProblemInput
-	defer r.Body.Close()
+	var problemData types.ProblemInput
+
 	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields()
 	err := decoder.Decode(&problemData)

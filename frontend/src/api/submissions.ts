@@ -13,36 +13,38 @@ import type { Submission, SubmissionResponse } from '../types';
 /**
  * Runs code against sample test cases (for testing/debugging)
  *
- * Executes user code in a sandboxed Docker environment with the
- * sample test cases. Results are returned immediately without
- * being saved to the database.
+ * Submits code to the queue for execution against sample test cases.
+ * Returns a submission ID for tracking. Results are processed asynchronously.
  *
  * @param axiosInstance - Axios instance (use useAxiosPrivate hook)
- * @param submission - Code submission with language, code, and test cases
- * @returns Promise resolving to execution results for all test cases
- * @throws Error if execution fails or network request fails
+ * @param code - User code to execute
+ * @param language - Programming language
+ * @param problemId - Problem identifier
+ * @returns Promise resolving to submission ID and timestamp
+ * @throws Error if submission fails or network request fails
  *
  * @example
  * ```typescript
  * const axiosPrivate = useAxiosPrivate();
- * const submission = {
- *   code: 'print(input())',
- *   language: 'python',
- *   test_cases: [{ input: 'hello', expected_output: 'hello' }],
- *   time_limit: 2000,
- *   memory_limit: 128
- * };
- *
- * const result = await runCode(axiosPrivate, submission);
- * console.log(result.passed_tests, '/', result.total_tests);
+ * const result = await runCode(axiosPrivate, code, 'python', 'two-sum');
+ * console.log('Submission ID:', result.submission_id);
  * ```
  */
 export const runCode = async (
   axiosInstance: AxiosInstance,
-  submission: Submission
+  code: string,
+  language: string,
+  problemId: string
 ): Promise<SubmissionResponse> => {
+  const submission: Submission = {
+    code,
+    language,
+    problem_id: problemId,
+    type: 'run',
+  };
+
   const response = await axiosInstance.post<SubmissionResponse>(
-    '/submissions/run',
+    '/submissions',
     submission
   );
   return response.data;
@@ -51,38 +53,38 @@ export const runCode = async (
 /**
  * Submits code for official evaluation against all test cases
  *
- * Executes user code against ALL test cases (including hidden ones)
- * and saves the submission to the database. Used for final submission
- * to determine if the problem is solved correctly.
+ * Submits code to the queue for execution against ALL test cases (including hidden ones).
+ * Returns a submission ID for tracking. Results are processed asynchronously.
  *
  * @param axiosInstance - Axios instance (use useAxiosPrivate hook)
- * @param submission - Code submission with language, code, and test cases
- * @returns Promise resolving to execution results and statistics
- * @throws Error if execution fails or network request fails
+ * @param code - User code to execute
+ * @param language - Programming language
+ * @param problemId - Problem identifier
+ * @returns Promise resolving to submission ID and timestamp
+ * @throws Error if submission fails or network request fails
  *
  * @example
  * ```typescript
  * const axiosPrivate = useAxiosPrivate();
- * const submission = {
- *   code: 'def solution(): pass',
- *   language: 'python',
- *   test_cases: problem.sample_test_cases,
- *   time_limit: problem.time_limit,
- *   memory_limit: problem.memory_limit
- * };
- *
- * const result = await submitCode(axiosPrivate, submission);
- * if (result.passed_tests === result.total_tests) {
- *   console.log('Accepted!');
- * }
+ * const result = await submitCode(axiosPrivate, code, 'python', 'two-sum');
+ * console.log('Submission ID:', result.submission_id);
  * ```
  */
 export const submitCode = async (
   axiosInstance: AxiosInstance,
-  submission: Submission
+  code: string,
+  language: string,
+  problemId: string
 ): Promise<SubmissionResponse> => {
+  const submission: Submission = {
+    code,
+    language,
+    problem_id: problemId,
+    type: 'submit',
+  };
+
   const response = await axiosInstance.post<SubmissionResponse>(
-    '/submissions/submit',
+    '/submissions',
     submission
   );
   return response.data;

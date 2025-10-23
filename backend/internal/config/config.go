@@ -19,6 +19,10 @@ type Config struct {
 	RefreshTokenExpiry time.Duration
 	AllowedOrigins     []string
 	RabbitMQURL        string
+	SMTPHost           string
+	SMTPPort           int
+	SMTPSender         string
+	SMTPPassword       string
 }
 
 func Load() *Config {
@@ -66,6 +70,32 @@ func Load() *Config {
 		log.Fatal("Missing rabbit mq url")
 	}
 
+	// SMTP Configuration
+	smtpHost := getEnv("SMTP_HOST", "")
+	if smtpHost == "" {
+		log.Fatal("SMTP_HOST is required in .env file")
+	}
+
+	smtpPortStr := getEnv("SMTP_PORT", "")
+	if smtpPortStr == "" {
+		log.Fatal("SMTP_PORT is required in .env file")
+	}
+
+	smtpPort, err := strconv.Atoi(smtpPortStr)
+	if err != nil {
+		log.Fatalf("Invalid SMTP_PORT '%s': %v", smtpPortStr, err)
+	}
+
+	smtpSender := getEnv("SMTP_SENDER", "")
+	if smtpSender == "" {
+		log.Fatal("SMTP_SENDER is required in .env file")
+	}
+
+	smtpPassword := getEnv("SMTP_PASSWORD", "")
+	if smtpPassword == "" {
+		log.Fatal("SMTP_PASSWORD is required in .env file")
+	}
+
 	config := &Config{
 		Port:               portString,
 		DB_URL:             dbUrl,
@@ -75,6 +105,10 @@ func Load() *Config {
 		RefreshTokenExpiry: refreshTokenExpiry,
 		AllowedOrigins:     allowedOrigins,
 		RabbitMQURL:        rabbitMqUrl,
+		SMTPHost:           smtpHost,
+		SMTPPort:           smtpPort,
+		SMTPSender:         smtpSender,
+		SMTPPassword:       smtpPassword,
 	}
 	return config
 }

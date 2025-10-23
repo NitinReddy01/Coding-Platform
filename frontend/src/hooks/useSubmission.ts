@@ -1,30 +1,21 @@
-/**
- * Custom hook for handling code execution and submission
- *
- * Manages execution state (running/submitting) and results locally.
- *
- * @module hooks/useSubmission
- */
-
 import { useState, useCallback } from 'react';
 import { runCode, submitCode } from '../api/submissions';
 import { useAxiosPrivate } from './useAxiosPrivate';
 import { getErrorMessage } from '../utils/errorHandler';
-import type { Submission, ExecutionResult } from '../types';
+import type { ExecutionResult } from '../types';
 
 /**
  * Hook for code execution and submission
  *
- * @param useMock - Whether to use mock execution instead of API (default: true)
  * @returns Object containing results, loading states, error, and execution functions
  *
  * @example
  * ```typescript
  * function EditorPanel() {
- *   const { results, isRunning, runCode, submitCode } = useSubmission(false);
+ *   const { submissionId, isRunning, runCode, submitCode } = useSubmission();
  *
  *   const handleRun = () => {
- *     runCode({ code, language, test_cases, time_limit, memory_limit });
+ *     runCode(code, language, problemId);
  *   };
  *
  *   return <button onClick={handleRun} disabled={isRunning}>Run</button>;
@@ -34,18 +25,21 @@ import type { Submission, ExecutionResult } from '../types';
 export const useSubmission = () => {
   const axiosPrivate = useAxiosPrivate();
   const [results, setResults] = useState<ExecutionResult[]>([]);
+  const [submissionId, setSubmissionId] = useState<string | null>(null);
   const [isRunning, setIsRunning] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleRunCode = useCallback(async (submission: Submission) => {
+  const handleRunCode = useCallback(async (code: string, language: string, problemId: string) => {
     setIsRunning(true);
     setError(null);
+    setResults([]);
+    setSubmissionId(null);
 
     try {
-      // const response = await runCode(axiosPrivate, submission);
-      // setResults(response.results);
-      console.log(submission);
+      const response = await runCode(axiosPrivate, code, language, problemId);
+      setSubmissionId(response.submission_id);
+      console.log('Run submission created:', response.submission_id);
     } catch (err) {
       const message = getErrorMessage(err, 'Failed to run code');
       setError(message);
@@ -54,15 +48,16 @@ export const useSubmission = () => {
     }
   }, [axiosPrivate]);
 
-  const handleSubmitCode = useCallback(async (submission: Submission) => {
+  const handleSubmitCode = useCallback(async (code: string, language: string, problemId: string) => {
     setIsSubmitting(true);
     setError(null);
+    setResults([]);
+    setSubmissionId(null);
 
     try {
-      console.log(submission);
-      // const response = await submitCode(axiosPrivate, submission);
-      // setResults(response.results);
-
+      const response = await submitCode(axiosPrivate, code, language, problemId);
+      setSubmissionId(response.submission_id);
+      console.log('Submit submission created:', response.submission_id);
     } catch (err) {
       const message = getErrorMessage(err, 'Failed to submit code');
       setError(message);
@@ -73,6 +68,7 @@ export const useSubmission = () => {
 
   return {
     results,
+    submissionId,
     isRunning,
     isSubmitting,
     error,

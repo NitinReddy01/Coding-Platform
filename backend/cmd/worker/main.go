@@ -16,7 +16,7 @@ package main
 
 import (
 	"app/internal/executor"
-	"app/internal/models"
+	"app/internal/lib/types"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -50,7 +50,7 @@ func main() {
 	// WHAT IS UNMARSHALING?
 	// Unmarshaling is converting JSON text into Go structs
 	// It's the opposite of marshaling (struct to JSON)
-	var submission models.Submission
+	var submission types.Submission
 	err = json.Unmarshal(data, &submission)
 	if err != nil {
 		log.Fatalf("Failed to parse submission: %v", err)

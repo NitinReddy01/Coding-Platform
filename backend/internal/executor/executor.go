@@ -3,6 +3,7 @@
 package executor
 
 import (
+	"app/internal/lib/types"
 	"app/internal/models"
 	"context"
 	"fmt"
@@ -96,9 +97,9 @@ func NewExecutor(workDir string, memLimitMB int) *Executor {
 //  3. Collect all results and return them
 //
 // The (e *Executor) syntax means this is a method on the Executor type.
-// The asterisk (*) before models.Submission means we accept a pointer to a Submission,
+// The asterisk (*) before types.Submission means we accept a pointer to a Submission,
 // not a copy. This is more efficient for large structs.
-func (e *Executor) Execute(submission *models.Submission) (*models.ExecutionResult, error) {
+func (e *Executor) Execute(submission *types.Submission) (*models.ExecutionResult, error) {
 	// Look up the runner for this language in our map
 	// In Go, map lookup returns two values:
 	// - runner: the value (if found)
@@ -157,7 +158,7 @@ func (e *Executor) Execute(submission *models.Submission) (*models.ExecutionResu
 
 // executeTestCase runs code against a single test case and returns the result.
 // This is a private helper method (lowercase name means private in Go).
-func (e *Executor) executeTestCase(runner LanguageRunner, submission *models.Submission, testCase models.TestCase) models.TestCaseResult {
+func (e *Executor) executeTestCase(runner LanguageRunner, submission *types.Submission, testCase models.TestCase) models.TestCaseResult {
 	// Create a context with timeout
 	// WHAT IS CONTEXT?
 	// context.Context is Go's way of handling timeouts and cancellation.

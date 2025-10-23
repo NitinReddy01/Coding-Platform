@@ -1,23 +1,25 @@
 package routes
 
 import (
+	"app/internal/config"
 	"app/internal/lib"
 	"app/internal/middlewares"
 	"app/internal/routes/auth"
 	"app/internal/routes/mail"
 	"app/internal/routes/problems"
+	"app/internal/routes/submissions"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
 )
 
-func New(allowedOrigins []string) *chi.Mux {
+func New(cfg *config.Config) *chi.Mux {
 	r := chi.NewRouter()
 
 	r.Route("/api", func(r chi.Router) {
 
 		r.Use(func(next http.Handler) http.Handler {
-			return middlewares.CORSMiddleware(next, allowedOrigins)
+			return middlewares.CORSMiddleware(next, cfg.AllowedOrigins)
 		})
 
 		r.Group(func(public chi.Router) {
@@ -32,7 +34,8 @@ func New(allowedOrigins []string) *chi.Mux {
 			private.Use(middlewares.AuthMiddleware)
 
 			private.Mount("/problems", problems.ProblemRoutes())
-			private.Mount("/mails", mail.MailRoutes())
+			private.Mount("/mails", mail.MailRoutes(cfg))
+			private.Mount("/submissions", submissions.SubmissionRoutes(cfg))
 		})
 	})
 

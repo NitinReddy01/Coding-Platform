@@ -5,7 +5,6 @@ import { setCode } from '../store/slices/editorSlice';
 import { useProblem } from '../hooks/useProblem';
 import { useSubmission } from '../hooks/useSubmission';
 import { ProblemLayout } from '../components/layout/ProblemLayout';
-import type { Submission } from '../types';
 
 export function ProblemPage() {
   const { title } = useParams<{ title: string }>();
@@ -40,31 +39,13 @@ export function ProblemPage() {
   const handleRun = useCallback(() => {
     if (!problem || !code.trim()) return;
 
-    const submission: Submission = {
-      code,
-      language,
-      problem_id: problem.id,
-      test_cases: problem.sample_test_cases,
-      time_limit: problem.time_limit,
-      memory_limit: problem.memory_limit,
-    };
-
-    runCode(submission);
+    runCode(code, language, problem.id);
   }, [problem, code, language, runCode]);
 
   const handleSubmit = useCallback(() => {
     if (!problem || !code.trim()) return;
 
-    const submission: Submission = {
-      code,
-      language,
-      problem_id: problem.id,
-      test_cases: problem.sample_test_cases,
-      time_limit: problem.time_limit,
-      memory_limit: problem.memory_limit,
-    };
-
-    submitCode(submission);
+    submitCode(code, language, problem.id);
   }, [problem, code, language, submitCode]);
 
   if (loading) {

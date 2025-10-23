@@ -44,6 +44,13 @@ func (s RequestStatus) IsValid() bool {
 	}
 }
 
+type Languages struct {
+	Language    string `json:"language"`     // Display name (e.g., "Python 3.11")
+	Code        string `json:"code"`         // Language identifier (e.g., "python")
+	MonacoId    string `json:"monaco_id"`    // Monaco editor language ID for syntax highlighting
+	DefaultCode string `json:"default_code"` // Default starter code template
+}
+
 type Problem struct {
 	ID                string          `json:"id"`
 	Title             string          `json:"title"`
@@ -65,50 +72,4 @@ type Problem struct {
 	Tags              []Tag           `json:"tags"`
 	TestCases         []TestCase      `json:"test_cases"`
 	SampleTestCases   []TestCase      `json:"sample_test_cases"`
-}
-
-type ProblemInput struct {
-	Title             string          `json:"title"`
-	Description       string          `json:"description"`
-	Difficulty        DifficultyLevel `json:"difficulty"`
-	InputDescription  string          `json:"input_description"`
-	OutputDescription string          `json:"output_description"`
-	TimeLimit         int             `json:"time_limit"`   // milliseconds
-	MemoryLimit       int             `json:"memory_limit"` // MB
-	Constraints       *string         `json:"constraints,omitempty"`
-	TestCases         []TestCase      `json:"test_cases"`
-	Tags              []string        `json:"tags"`
-}
-
-type ProblemMode string
-
-const (
-	Contest  ProblemMode = "contest"
-	Practice ProblemMode = "practice"
-	Edit     ProblemMode = "edit"
-)
-
-func (m ProblemMode) IsValid() bool {
-	switch m {
-	case Contest, Practice, Edit:
-		return true
-	default:
-		return false
-	}
-}
-
-type ProblemListItem struct {
-	ID                   string  `json:"id"`
-	Title                string  `json:"title"`
-	Difficulty           string  `json:"difficulty"`
-	Acceptance           int16   `json:"acceptance"`
-	Submissions          int16   `json:"submissions"`
-	AcceptancePercentage float64 `json:"acceptance_percentage"`
-}
-
-type PaginatedProblems struct {
-	Problems []ProblemListItem `json:"problems"`
-	Total    uint16            `json:"total"`
-	Page     uint16            `json:"page"`
-	Limit    uint8             `json:"limit"`
 }

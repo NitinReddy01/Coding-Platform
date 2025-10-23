@@ -1,14 +1,10 @@
-import type { TestCase } from "./problem";
+export type SubmissionType = "run" | "submit";
 
 export interface Submission {
   code: string;
   language: string;
   problem_id: string;
-  test_cases: TestCase[];
-  /** Maximum execution time allowed in milliseconds */
-  time_limit: number;
-  /** Maximum memory allowed in megabytes */
-  memory_limit: number;
+  type: SubmissionType;
 }
 export interface ExecutionResult {
   /** Index of the test case (0-based) */
@@ -34,19 +30,14 @@ export interface ExecutionResult {
 }
 
 /**
- * Complete response from code execution
+ * Response from submission API
  *
- * Aggregates all test case results with summary statistics.
+ * Contains submission ID for tracking and timestamp.
+ * Actual results are processed asynchronously via queue.
  */
 export interface SubmissionResponse {
-  /** Results for each test case */
-  results: ExecutionResult[];
-  /** Total number of test cases */
-  total_tests: number;
-  /** Number of test cases that passed */
-  passed_tests: number;
-  /** Number of test cases that failed */
-  failed_tests: number;
-  /** Total execution time across all test cases in milliseconds */
-  total_time: number;
+  /** Unique identifier for the submission */
+  submission_id: string;
+  /** ISO 8601 timestamp of when submission was created */
+  submitted_at: string;
 }
