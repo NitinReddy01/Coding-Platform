@@ -1,9 +1,16 @@
 # Development Plan - Coding Platform
 **Full-Stack Development with Phase-by-Phase Approach**
 
-**Last Updated:** 2025-10-11
+**Last Updated:** 2025-10-26
 **Status:** 🟡 Phase 1 - In Progress (Step 1A - 80% complete)
 **Overall Progress:** 25% (0/5 phases completed, Phase 1 Step 1A 80%)
+
+**Recent Updates:**
+- ✅ Async submission processing with RabbitMQ implemented
+- ✅ Database submissions table migration completed
+- ✅ Frontend polling mechanism with useSubmissionPolling hook
+- ✅ Mail service integration with SMTP
+- ✅ Migrated from http.ServeMux to Chi router
 
 ---
 
@@ -80,19 +87,35 @@ Phase X
 - ✅ Authentication (Login/Register with Google OAuth)
 - ✅ Problem solving page with Monaco editor
 - ✅ Code execution worker (Docker-based)
-- ✅ Database schema: users, roles, problems, tags, test_cases
+- ✅ **Asynchronous submission processing with RabbitMQ**
+- ✅ **Submission status tracking and polling**
+- ✅ Database schema: users, roles, problems, tags, test_cases, **submissions**
 - ✅ Basic UI components: Button, Card, Tabs, Select, Badge, Input, Label
+- ✅ **Advanced UI components: Modal, Dropdown, Avatar, Tooltip, StatusBadge**
 - ✅ Redux store with editor slice
 - ✅ Protected routes
+- ✅ **Chi router for backend routing**
+- ✅ **SMTP-based mail service**
+- ✅ **Keyboard shortcuts (platform-aware)**
 
 ### Existing Database Tables:
 - `users`, `authentication`, `roles`, `user_roles`
 - `problems`, `tags`, `problem_tags`, `test_cases`
 - `refresh_tokens`
+- **`submissions`** - Tracks all code submissions with status, metrics, and results
 
 ### Existing Pages:
 - `/login`, `/register`, `/auth/google/callback`
 - `/problems/:id` (ProblemPage with editor)
+- Dashboard, Problems List, Submissions History, User Profile (Phase 1A screens)
+
+### Existing API Endpoints:
+- `/api/auth/*` - Authentication endpoints
+- `/api/problems/*` - Problem CRUD and retrieval
+- **`/api/submissions`** - Submit code for execution (returns submission_id)
+- **`/api/submissions/status/{id}`** - Poll submission status
+- **`/api/submissions/problem/{problemId}/latest`** - Get latest submission
+- **`/api/mails/send-mail`** - Send email via SMTP
 
 ---
 
@@ -956,12 +979,14 @@ CREATE INDEX idx_admin_notes_entity ON admin_notes(entity_type, entity_id, creat
 - React Syntax Highlighter
 
 ### Backend Tech Stack:
-- Go (Gin or standard net/http)
-- PostgreSQL
-- Docker (for code execution)
-- Goose (migrations)
-- JWT (authentication)
-- WebSocket (real-time features)
+- Go with **Chi router** (`github.com/go-chi/chi/v5`) ✅
+- PostgreSQL ✅
+- **RabbitMQ** (message queue for async execution) ✅
+- Docker (for code execution) ✅
+- Goose (migrations) ✅
+- JWT (authentication) ✅
+- **SMTP** (email service via `gopkg.in/mail.v2`) ✅
+- WebSocket (real-time features) - Planned
 
 ### Database:
 - PostgreSQL 14+

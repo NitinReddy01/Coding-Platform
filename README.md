@@ -5,11 +5,14 @@ A robust, full-featured coding challenge platform built in Go with secure code e
 ## 🎯 Features
 
 ### Code Execution
+- **Asynchronous Processing**: RabbitMQ-based queue system for scalable code execution
+- **Real-time Status Updates**: Frontend polls submission status every 1.5 seconds
 - **Multi-language Support**: Extensible architecture supports multiple programming languages (currently Python)
 - **Resource Limits**: Enforces time limits (milliseconds) and memory limits (MB)
 - **Docker Sandboxing**: Isolated, secure execution environment with no network access
 - **Test Case Evaluation**: Automatically compares output against expected results
 - **Detailed Results**: Returns execution time, memory usage, and error messages for each test case
+- **Submission Tracking**: Database-backed submission history with status tracking
 
 ### Platform Features
 - **User Authentication**: Multi-provider authentication system (email/password, OAuth ready)
@@ -18,6 +21,8 @@ A robust, full-featured coding challenge platform built in Go with secure code e
 - **Approval Workflow**: Problem review system with statuses (pending, approved, rejected, requested changes)
 - **Tagging System**: Categorize problems with custom tags
 - **Statistics Tracking**: Track submissions and acceptance rates per problem
+- **Email Notifications**: SMTP-based email service for notifications and communication
+- **Keyboard Shortcuts**: Platform-aware shortcuts (Cmd/Ctrl) for faster navigation
 
 ### Developer Experience
 - **Beginner-Friendly**: Extensively documented code with explanations of Go concepts
@@ -45,6 +50,10 @@ A robust, full-featured coding challenge platform built in Go with secure code e
 - PostgreSQL 12 or later
   - Install: https://www.postgresql.org/download/
   - Create a database for the application
+- RabbitMQ (for asynchronous code execution queue)
+  - Install: https://www.rabbitmq.com/download.html
+  - Or run with Docker: `docker run -d --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:3-management`
+  - Management UI: http://localhost:15672 (guest/guest)
 
 ### Installation
 
@@ -53,96 +62,151 @@ A robust, full-featured coding challenge platform built in Go with secure code e
 git clone <repository-url>
 cd coding_platform
 
-# Install dependencies
+# Install backend dependencies
+cd backend
 go mod download
 
 # Set up environment variables
-cp .env.example .env  # Create .env file and configure DATABASE_URL
+cp .env.example .env
+# Edit .env and configure:
+# - DATABASE_URL (PostgreSQL connection string)
+# - RABBITMQ_URL (RabbitMQ connection string)
+# - SMTP settings (for email service)
+# - JWT secrets
 
 # Run database migrations
 goose -dir db/migrations postgres "your_postgres_connection_string" up
+
+# Install frontend dependencies
+cd ../frontend
+npm install
+cp .env.example .env
+# Edit .env and set VITE_API_BASE_URL=http://localhost:4000/api
 ```
 
-### Run the Worker
+### Run the Application
 
+**Start RabbitMQ** (if not already running):
 ```bash
-# Run with a submission file
-# Docker image builds automatically on first run
-go run cmd/worker/main.go test_worker.json
-
-# Optional: Pre-build the Docker image manually
-docker build -t python-executor -f dockerfiles/python.Dockerfile dockerfiles/
+docker run -d --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:3-management
+# Management UI: http://localhost:15672 (guest/guest)
 ```
 
-### Example Submission File
+**Start the Backend Services:**
+```bash
+# Terminal 1: Run API Server
+cd backend
+go run cmd/server/main.go
 
-Create a file `test_worker.json`:
+# Terminal 2: Run Worker (RabbitMQ Consumer)
+cd backend
+go run cmd/worker/main.go
+# Worker continuously listens for submission messages and executes code
+```
 
-```json
-{
-  "code": "n = int(input())\nprint(n * 2)",
-  "language": "python",
-  "time_limit": 2000,
-  "memory_limit": 128,
-  "test_cases": [
-    {
-      "input": "5",
-      "expected_output": "10"
-    },
-    {
-      "input": "10",
-      "expected_output": "20"
-    }
-  ]
-}
+**Start the Frontend:**
+```bash
+# Terminal 3: Run Frontend Dev Server
+cd frontend
+npm run dev
+# Navigate to http://localhost:5173
+```
+
+**Optional: Pre-build Docker images:**
+```bash
+# Python executor image (auto-builds on first use if not present)
+cd backend
+docker build -t python-executor -f dockerfiles/python.Dockerfile dockerfiles/
 ```
 
 ## 🏗️ Architecture
 
-The system uses Docker sandboxing with a clean, modular architecture:
+The system uses **asynchronous processing with RabbitMQ** and **Docker sandboxing**:
 
 ```
-┌─────────────┐
-│   Worker    │  (CLI tool that reads submissions)
-└──────┬──────┘
-       │
-       ▼
-┌─────────────┐
-│  Executor   │  (Orchestrates test execution)
-└──────┬──────┘
-       │
-       ▼
-┌──────────────────┐
-│ Language Runners │  (Python, Java, C++, etc.)
-└──────┬───────────┘
-       │
-       ▼
-┌──────────────────────┐
-│ Docker Containers    │  (Isolated, secure execution)
-│ - No network access  │
-│ - Resource limits    │
-│ - Non-root user      │
-└──────────────────────┘
+┌─────────────────┐
+│   Frontend      │  User submits code
+│  (React + TS)   │
+└────────┬────────┘
+         │ POST /api/submissions
+         ▼
+┌─────────────────┐
+│   API Server    │  1. Save to Database (status: pending)
+│   (Go + Chi)    │  2. Send to RabbitMQ Queue
+└────────┬────────┘  3. Return submission_id
+         │
+         │ Frontend polls every 1.5s
+         │ GET /api/submissions/status/{id}
+         │
+         ▼
+┌─────────────────┐
+│   Database      │  Tracks submission status
+│  (PostgreSQL)   │  & execution results
+└─────────────────┘
+         ▲
+         │
+         │ Worker updates status
+         │
+┌─────────────────┐
+│  RabbitMQ Queue │  Message broker
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│     Worker      │  1. Consume from queue
+│                 │  2. Update status: running
+└────────┬────────┘  3. Execute code
+         │           4. Save results
+         ▼
+┌─────────────────┐
+│    Executor     │  Orchestrates test execution
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ Language Runner │  Python, Java, C++, etc.
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────────────┐
+│  Docker Container       │  Isolated, secure execution
+│  - No network access    │
+│  - Resource limits      │
+│  - Non-root user        │
+└─────────────────────────┘
 ```
 
 ### Key Components
 
-1. **Models** (`internal/models/`): Data structures for submissions, test cases, and results
-2. **Executor** (`internal/executor/`): Core execution engine that runs code and evaluates results
-3. **Language Runners**: Language-specific implementations (PythonRunner, JavaRunner, etc.)
-4. **Worker** (`cmd/worker/`): CLI tool to run submissions (can be adapted for queues/HTTP)
-5. **Database** (`db/migrations/`): PostgreSQL schema with users, authentication, roles, problems, and tags
+1. **API Server** (`cmd/server/`): Chi router-based HTTP server handling submissions and status queries
+2. **Queue Services** (`internal/services/queue/`): RabbitMQ sender and receiver for async processing
+3. **Models** (`internal/models/`): Data structures for submissions, test cases, and results
+4. **Executor** (`internal/executor/`): Core execution engine that runs code and evaluates results
+5. **Language Runners**: Language-specific implementations (PythonRunner, JavaRunner, etc.)
+6. **Worker** (`cmd/worker/`): Background service that consumes from RabbitMQ queue and executes code
+7. **Database** (`db/migrations/`): PostgreSQL schema with users, authentication, roles, problems, submissions, and tags
+8. **Mail Service** (`internal/services/mailService.go`): SMTP-based email notifications
 
 ## 🔧 How It Works
 
 ### Execution Flow
 
-1. **Read Submission**: Parse JSON file containing code, language, and test cases
-2. **Initialize Executor**: Auto-register all supported language runners
-3. **Ensure Docker Image**: Check if image exists, build automatically if needed (one-time)
-4. **For Each Test Case**:
+**Asynchronous Submission Processing:**
+
+1. **User Submits Code**: Frontend sends code to `POST /api/submissions`
+2. **API Server**:
+   - Creates submission record in database (status: `pending`)
+   - Sends message to RabbitMQ queue
+   - Returns `submission_id` to frontend immediately
+3. **Frontend Polling**: Uses `useSubmissionPolling` hook to poll `/api/submissions/status/{id}` every 1.5 seconds
+4. **Worker Consumes Message**:
+   - Picks up message from RabbitMQ queue
+   - Updates submission status to `running`
+   - Initializes executor with language runners
+   - Ensures Docker image exists (auto-build if needed)
+5. **For Each Test Case**:
    - Create temporary directory on host
-   - Write code to a file (e.g., `solution.py`)
+   - Write code to file (e.g., `solution.py`)
    - Generate unique container name
    - Launch Docker container with resource limits
    - Run code with test input via stdin
@@ -150,7 +214,11 @@ The system uses Docker sandboxing with a clean, modular architecture:
    - On timeout: explicitly kill container
    - Compare output with expected result
    - Clean up temporary files
-5. **Return Results**: Aggregate all test results and metrics
+6. **Update Database**:
+   - Save final status (`accepted`, `wrong_answer`, `time_limit_exceeded`, etc.)
+   - Record execution metrics (runtime, memory usage)
+   - Store test case results
+7. **Frontend Receives Results**: Next poll receives final status and stops polling
 
 ### Resource Monitoring & Security
 
@@ -170,42 +238,77 @@ The system uses Docker sandboxing with a clean, modular architecture:
 
 ## 📖 Usage
 
-### Running a Submission
+### Submitting Code for Execution
 
+**Via Web UI (Recommended):**
+1. Navigate to http://localhost:5173 in your browser
+2. Select a problem from the problems list
+3. Write your solution in the Monaco code editor
+4. Click "Run" to test with sample test cases
+5. Click "Submit" to run against all hidden test cases
+6. Watch real-time status updates as your code executes
+
+**Via API:**
 ```bash
-go run cmd/worker/main.go <path-to-submission.json>
+# Submit code for execution
+curl -X POST http://localhost:4000/api/submissions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -d '{
+    "problem_id": "problem-uuid",
+    "code": "def solution(n):\n    return n * 2",
+    "language": "python",
+    "type": "submit"
+  }'
+
+# Response
+{
+  "submission_id": "uuid",
+  "status": "pending"
+}
+
+# Poll for results
+curl http://localhost:4000/api/submissions/status/{submission_id} \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
-### Output
+### Response Structure
 
-The worker prints:
-- Execution summary (passed/total tests)
-- Per-test-case results
-- Time and memory metrics
-- A `result.json` file with detailed JSON output
-
-### Result Structure
+When polling returns final status, you'll receive:
 
 ```json
 {
-  "success": true,
-  "test_results": [
-    {
-      "passed": true,
-      "input": "5",
-      "expected_output": "10",
-      "actual_output": "10",
-      "execution_time": 45,
-      "memory_used": 2048,
-      "error": ""
-    }
-  ],
-  "total_passed": 3,
-  "total_tests": 3,
-  "max_execution_ms": 120,
-  "max_memory_kb": 4096
+  "id": "uuid",
+  "status": "accepted",
+  "runtime_ms": 45,
+  "memory_used_mb": 2.5,
+  "test_cases_passed": 10,
+  "test_cases_total": 10,
+  "error_message": null,
+  "submitted_at": "2025-10-26T10:30:00Z",
+  "completed_at": "2025-10-26T10:30:02Z"
 }
 ```
+
+**Possible status values:**
+- `pending` - Waiting in queue
+- `running` - Currently executing
+- `accepted` - All test cases passed
+- `wrong_answer` - Output doesn't match expected
+- `time_limit_exceeded` - Execution took too long
+- `memory_limit_exceeded` - Used too much memory
+- `runtime_error` - Code crashed during execution
+- `compilation_error` - Code failed to compile
+
+### Worker Logs
+
+The worker outputs execution details to the console:
+- Submission ID being processed
+- Execution progress for each test case
+- Final status and metrics
+- Any errors encountered
+
+Monitor worker logs to see real-time code execution activity.
 
 ## 🔨 Adding New Languages
 
@@ -276,13 +379,10 @@ runners[javaRunner.GetLanguageName()] = javaRunner
 
 ### Step 4: Test
 
-```json
-{
-  "code": "import java.util.Scanner; ...",
-  "language": "java",
-  ...
-}
-```
+Test the new language through the web UI or API:
+- Select "Java" from the language dropdown in the editor
+- Write Java code and submit
+- Or use the API with `"language": "java"` in the request body
 
 ## 📚 Go Concepts Used
 
@@ -400,15 +500,18 @@ If you're new to Go, here are the key concepts to understand:
 
 ## 🔮 Future Enhancements
 
-- [ ] Add more languages (Java, C++, JavaScript, etc.)
-- [ ] Integration with message queues (RabbitMQ, Redis)
+- [x] ~~Integration with message queues (RabbitMQ)~~ ✅ Completed
+- [x] ~~Web UI for submitting code~~ ✅ Completed (React frontend)
+- [x] ~~User submission history~~ ✅ Completed (submissions table)
+- [ ] Add more languages (Java, C++, JavaScript, Rust, etc.)
 - [ ] Distributed execution across multiple workers
-- [ ] Web UI for submitting code
 - [ ] Rate limiting and queue management
 - [ ] Compilation caching for compiled languages
 - [ ] Memory usage tracking within containers
-- [ ] User submission history and leaderboards
+- [ ] Contest system and leaderboards
 - [ ] Problem difficulty rating and recommendation system
+- [ ] Admin panel for problem management
+- [ ] WebSocket support for real-time updates (replace polling)
 
 ## 📝 License
 
