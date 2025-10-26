@@ -1,14 +1,24 @@
-import type { TestCase } from "./problem";
+export type SubmissionType = "run" | "submit";
+
+/**
+ * Status values for submission execution
+ * Matches backend submission_status enum
+ */
+export type SubmissionStatus =
+  | "pending"           // Waiting in queue
+  | "running"           // Currently executing
+  | "accepted"          // All tests passed
+  | "wrong_answer"      // Some tests failed
+  | "time_limit_exceeded"    // Timeout
+  | "memory_limit_exceeded"  // Out of memory
+  | "runtime_error"     // Runtime error
+  | "compilation_error"; // Compilation failed
 
 export interface Submission {
   code: string;
   language: string;
   problem_id: string;
-  test_cases: TestCase[];
-  /** Maximum execution time allowed in milliseconds */
-  time_limit: number;
-  /** Maximum memory allowed in megabytes */
-  memory_limit: number;
+  type: SubmissionType;
 }
 export interface ExecutionResult {
   /** Index of the test case (0-based) */
@@ -34,19 +44,50 @@ export interface ExecutionResult {
 }
 
 /**
- * Complete response from code execution
+ * Response from submission API
  *
- * Aggregates all test case results with summary statistics.
+ * Contains submission ID for tracking and timestamp.
+ * Actual results are processed asynchronously via queue.
  */
 export interface SubmissionResponse {
-  /** Results for each test case */
-  results: ExecutionResult[];
-  /** Total number of test cases */
-  total_tests: number;
-  /** Number of test cases that passed */
-  passed_tests: number;
-  /** Number of test cases that failed */
-  failed_tests: number;
-  /** Total execution time across all test cases in milliseconds */
-  total_time: number;
+  /** Unique identifier for the submission */
+  submission_id: string;
+  /** ISO 8601 timestamp of when submission was created */
+  submitted_at: string;
+}
+
+/**
+ * Response from polling endpoint
+ *
+ * Lightweight response for checking submission status.
+ * Used for real-time polling while submission is being processed.
+ */
+export interface SubmissionStatusResponse {
+  /** Current status of the submission */
+  status: SubmissionStatus;
+  /** Maximum runtime in milliseconds (only when complete) */
+  runtime_ms?: number;
+  /** Maximum memory used in MB (only when complete) */
+  memory_used_mb?: number;
+  /** Number of test cases passed (only when complete) */
+  test_cases_passed?: number;
+  /** Total number of test cases (only when complete) */
+  test_cases_total?: number;
+  /** Error message if any (only on error statuses) */
+  error_message?: string;
+}
+
+/**
+ * Response from latest submission endpoint
+ *
+ * Contains the user's most recent submission for a problem.
+ * Used to populate the code editor with previous work.
+ */
+export interface LatestSubmissionResponse {
+  /** The code from the latest submission */
+  code: string;
+  /** Programming language used */
+  language: string;
+  /** ISO 8601 timestamp of when submission was created */
+  submitted_at: string;
 }

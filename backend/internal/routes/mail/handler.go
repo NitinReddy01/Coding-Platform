@@ -1,6 +1,7 @@
 package mail
 
 import (
+	"app/internal/config"
 	"app/internal/lib"
 	"app/internal/lib/types"
 	"app/internal/services"
@@ -10,16 +11,18 @@ import (
 )
 
 // handleSendMail handles the /send-mail POST request
-func handleSendMail(w http.ResponseWriter, r *http.Request) {
+func handleSendMail(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	var req types.MailRequest
 
-	// Decode the JSON request body into req
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+
+	if err := decoder.Decode(&req); err != nil {
 		lib.JSONError(w, http.StatusBadRequest, "Missing fields in request body")
 		return
 	}
 
-	if err := services.SendMail(req.To, req.Subject, req.Message, req.IsHTML); err != nil {
+	if err := services.SendMail(req.To, req.Subject, req.Message, req.IsHTML, cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPSender, cfg.SMTPPassword); err != nil {
 		log.Printf("Error when sending mail %v", err)
 		lib.InternalErrorHandler(w)
 		return

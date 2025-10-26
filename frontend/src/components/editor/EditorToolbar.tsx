@@ -2,6 +2,7 @@ import { memo } from 'react';
 import { Play, Check, Loader2 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { LanguageSelector } from './LanguageSelector';
+import { KeyboardBadge } from '../ui/KeyboardBadge';
 
 
 interface EditorToolbarProps {
@@ -9,9 +10,10 @@ interface EditorToolbarProps {
   onSubmit: () => void;
   isRunning: boolean;
   isSubmitting: boolean;
+  isPolling?: boolean;
 }
 
-function EditorToolbarComponent({ onRun, onSubmit, isRunning, isSubmitting }: EditorToolbarProps) {
+function EditorToolbarComponent({ onRun, onSubmit, isRunning, isSubmitting, isPolling = false }: EditorToolbarProps) {
 
   return (
     <div className="flex items-center justify-between border-b-2 border-border bg-gradient-to-r from-background via-card to-background px-4 py-3 shadow-sm">
@@ -21,7 +23,7 @@ function EditorToolbarComponent({ onRun, onSubmit, isRunning, isSubmitting }: Ed
         <Button
           variant="warning"
           onClick={onRun}
-          disabled={isRunning || isSubmitting}
+          disabled={isRunning || isSubmitting || isPolling}
           size="default"
         >
           {isRunning ? (
@@ -33,6 +35,7 @@ function EditorToolbarComponent({ onRun, onSubmit, isRunning, isSubmitting }: Ed
             <>
               <Play className="w-4 h-4" fill="currentColor" />
               Run Code
+              <KeyboardBadge shortcut="Quote" withCtrl />
             </>
           )}
         </Button>
@@ -40,7 +43,7 @@ function EditorToolbarComponent({ onRun, onSubmit, isRunning, isSubmitting }: Ed
         <Button
           variant="success"
           onClick={onSubmit}
-          disabled={isRunning || isSubmitting}
+          disabled={isRunning || isSubmitting || isPolling}
           size="default"
         >
           {isSubmitting ? (
@@ -52,6 +55,7 @@ function EditorToolbarComponent({ onRun, onSubmit, isRunning, isSubmitting }: Ed
             <>
               <Check className="w-4 h-4" strokeWidth={3} />
               Submit
+              <KeyboardBadge shortcut="Enter" withCtrl />
             </>
           )}
         </Button>
