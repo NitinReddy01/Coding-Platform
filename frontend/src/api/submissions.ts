@@ -8,7 +8,7 @@
  */
 
 import type { AxiosInstance } from 'axios';
-import type { Submission, SubmissionResponse } from '../types';
+import type { Submission, SubmissionResponse, SubmissionStatusResponse, LatestSubmissionResponse } from '../types';
 
 /**
  * Runs code against sample test cases (for testing/debugging)
@@ -86,6 +86,68 @@ export const submitCode = async (
   const response = await axiosInstance.post<SubmissionResponse>(
     '/submissions',
     submission
+  );
+  return response.data;
+};
+
+/**
+ * Gets the current status of a submission (for polling)
+ *
+ * Polls the backend to check if the submission has completed processing.
+ * Returns lightweight status information without heavy data like code or detailed results.
+ *
+ * @param axiosInstance - Axios instance (use useAxiosPrivate hook)
+ * @param submissionId - Submission identifier to check
+ * @returns Promise resolving to submission status and metrics
+ * @throws Error if submission not found or network request fails
+ *
+ * @example
+ * ```typescript
+ * const axiosPrivate = useAxiosPrivate();
+ * const status = await getSubmissionStatus(axiosPrivate, submissionId);
+ * if (status.status === 'accepted') {
+ *   console.log('All tests passed!');
+ * }
+ * ```
+ */
+export const getSubmissionStatus = async (
+  axiosInstance: AxiosInstance,
+  submissionId: string
+): Promise<SubmissionStatusResponse> => {
+  const response = await axiosInstance.get<SubmissionStatusResponse>(
+    `/submissions/status/${submissionId}`
+  );
+  return response.data;
+};
+
+/**
+ * Gets the user's latest submission for a problem
+ *
+ * Fetches the most recent submission (code and language) for a specific problem.
+ * Used to populate the code editor when the user revisits a problem.
+ *
+ * @param axiosInstance - Axios instance (use useAxiosPrivate hook)
+ * @param problemId - Problem identifier
+ * @returns Promise resolving to the latest submission data
+ * @throws Error if no submission found or network request fails
+ *
+ * @example
+ * ```typescript
+ * const axiosPrivate = useAxiosPrivate();
+ * try {
+ *   const latest = await getLatestSubmission(axiosPrivate, problemId);
+ *   // Populate editor with latest.code and latest.language
+ * } catch (err) {
+ *   // No previous submission, use default template
+ * }
+ * ```
+ */
+export const getLatestSubmission = async (
+  axiosInstance: AxiosInstance,
+  problemId: string
+): Promise<LatestSubmissionResponse> => {
+  const response = await axiosInstance.get<LatestSubmissionResponse>(
+    `/submissions/problem/${problemId}/latest`
   );
   return response.data;
 };

@@ -10,10 +10,12 @@ import (
 func SubmissionRoutes(cfg *config.Config) *chi.Mux {
 	router := chi.NewRouter()
 
-	// Use closure to pass config to handler
 	router.Post("/", func(w http.ResponseWriter, r *http.Request) {
 		HandleSubmission(w, r, cfg.RabbitMQURL)
 	})
+
+	router.Get("/status/{submissionId}", GetSubmissionStatus)
+	router.Get("/problem/{problemId}/latest", GetLatestSubmissionForProblem)
 
 	return router
 }

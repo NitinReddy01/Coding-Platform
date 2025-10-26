@@ -6,19 +6,30 @@ import { CodeEditor } from '../editor/CodeEditor';
 import { EditorToolbar } from '../editor/EditorToolbar';
 import { ConsolePanel } from '../editor/ConsolePanel';
 import { Button } from '../ui/button';
-import type { Problem, ExecutionResult } from '../../types';
+import type { Problem, ExecutionResult, SubmissionStatus, SubmissionType } from '../../types';
 
 interface ProblemLayoutProps {
   problem: Problem;
   onRun: () => void;
   onSubmit: () => void;
+  // New props for CodeEditor keyboard shortcuts
+  runCodeFn: (code: string, language: string, problemId: string) => void;
+  submitCodeFn: (code: string, language: string, problemId: string) => void;
   results: ExecutionResult[];
   isRunning: boolean;
   isSubmitting: boolean;
   submissionError: string | null;
+  status: SubmissionStatus | null;
+  isPolling: boolean;
+  runtimeMs?: number | null;
+  memoryUsedMb?: number | null;
+  testCasesPassed?: number | null;
+  testCasesTotal?: number | null;
+  errorMessage?: string | null;
+  submissionType: SubmissionType | null;
 }
 
-export function ProblemLayout({ problem, onRun, onSubmit, results, isRunning, isSubmitting, submissionError }: ProblemLayoutProps) {
+export function ProblemLayout({ problem, onRun, onSubmit, runCodeFn, submitCodeFn, results, isRunning, isSubmitting, submissionError, status, isPolling, runtimeMs, memoryUsedMb, testCasesPassed, testCasesTotal, errorMessage, submissionType }: ProblemLayoutProps) {
   const [leftWidth, setLeftWidth] = useState(40); // percentage
   const [bottomHeight, setBottomHeight] = useState(40); // percentage
   const [isResizing, setIsResizing] = useState<'horizontal' | 'vertical' | null>(null);
@@ -102,14 +113,19 @@ export function ProblemLayout({ problem, onRun, onSubmit, results, isRunning, is
           style={{ width: `${100 - leftWidth}%` }}
         >
           {/* Editor Toolbar */}
-          <EditorToolbar onRun={onRun} onSubmit={onSubmit} isRunning={isRunning} isSubmitting={isSubmitting} />
+          <EditorToolbar onRun={onRun} onSubmit={onSubmit} isRunning={isRunning} isSubmitting={isSubmitting} isPolling={isPolling} />
 
           {/* Editor */}
           <div
             className="flex-1 overflow-hidden"
             style={{ height: `${100 - bottomHeight}%` }}
           >
-            <CodeEditor />
+            <CodeEditor
+              runCodeFn={runCodeFn}
+              submitCodeFn={submitCodeFn}
+              problemId={problem.id}
+              isDisabled={isRunning || isSubmitting || isPolling}
+            />
           </div>
 
           {/* Vertical Resizer */}
@@ -123,7 +139,19 @@ export function ProblemLayout({ problem, onRun, onSubmit, results, isRunning, is
             className="overflow-hidden"
             style={{ height: `${bottomHeight}%` }}
           >
-            <ConsolePanel sampleTestCases={problem.sample_test_cases} results={results} error={submissionError} />
+            <ConsolePanel
+              sampleTestCases={problem.sample_test_cases}
+              results={results}
+              error={submissionError}
+              status={status}
+              isPolling={isPolling}
+              runtimeMs={runtimeMs}
+              memoryUsedMb={memoryUsedMb}
+              testCasesPassed={testCasesPassed}
+              testCasesTotal={testCasesTotal}
+              errorMessage={errorMessage}
+              submissionType={submissionType}
+            />
           </div>
         </div>
       </div>
@@ -135,16 +163,33 @@ export function ProblemLayout({ problem, onRun, onSubmit, results, isRunning, is
         ) : (
           <div className="flex flex-col h-full">
             {/* Editor Toolbar */}
-            <EditorToolbar onRun={onRun} onSubmit={onSubmit} isRunning={isRunning} isSubmitting={isSubmitting} />
+            <EditorToolbar onRun={onRun} onSubmit={onSubmit} isRunning={isRunning} isSubmitting={isSubmitting} isPolling={isPolling} />
 
             {/* Editor - 60% height */}
             <div className="h-[60%] overflow-hidden">
-              <CodeEditor />
+              <CodeEditor
+                runCodeFn={runCodeFn}
+                submitCodeFn={submitCodeFn}
+                problemId={problem.id}
+                isDisabled={isRunning || isSubmitting || isPolling}
+              />
             </div>
 
             {/* Console - 40% height */}
             <div className="h-[40%] overflow-hidden">
-              <ConsolePanel sampleTestCases={problem.sample_test_cases} results={results} error={submissionError} />
+              <ConsolePanel
+                sampleTestCases={problem.sample_test_cases}
+                results={results}
+                error={submissionError}
+                status={status}
+                isPolling={isPolling}
+                runtimeMs={runtimeMs}
+                memoryUsedMb={memoryUsedMb}
+                testCasesPassed={testCasesPassed}
+                testCasesTotal={testCasesTotal}
+                errorMessage={errorMessage}
+                submissionType={submissionType}
+              />
             </div>
           </div>
         )}

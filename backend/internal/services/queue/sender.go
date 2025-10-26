@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 
 	"github.com/rabbitmq/amqp091-go"
 )
@@ -59,6 +58,5 @@ func SendSubmission(ctx context.Context, submission types.Submission, rabbitMQUR
 		return fmt.Errorf("failed to publish message: %w", err)
 	}
 
-	log.Printf("[x] Sent submission %s to queue\n", submission.SubmissionId)
 	return nil
 }

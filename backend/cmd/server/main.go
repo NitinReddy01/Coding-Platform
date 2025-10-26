@@ -15,6 +15,7 @@ func main() {
 	// Initialize JWT with configuration
 	lib.InitJWT(config.JWTAccessSecret, config.JWTRefreshSecret, config.AccessTokenExpiry, config.RefreshTokenExpiry)
 
+	// queue.Receive()
 	db.Connect(config.DB_URL)
 	log.Println("BE server running on", config.Port)
 	defer db.Close()

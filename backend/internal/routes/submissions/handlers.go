@@ -81,7 +81,7 @@ func HandleSubmission(w http.ResponseWriter, r *http.Request, rabbitMQURL string
 	totalTestCases := len(testCases)
 
 	// Insert submission into database
-	submissionId, submittedAt, err := db.AddSubmission(
+	submissionId, err := db.AddSubmission(
 		ctx,
 		userCtx.UserID,
 		submissionReq.ProblemId,
@@ -118,8 +118,88 @@ func HandleSubmission(w http.ResponseWriter, r *http.Request, rabbitMQURL string
 	// Return submission ID and timestamp for frontend polling
 	response := types.SubmissionResponse{
 		SubmissionId: submissionId,
-		SubmittedAt:  submittedAt,
 	}
 
 	lib.JSON(w, http.StatusCreated, response)
+}
+
+func GetSubmissionStatus(w http.ResponseWriter, r *http.Request) {
+
+	userCtx := middlewares.GetUserContext(r)
+	if userCtx == nil {
+		lib.JSONError(w, http.StatusUnauthorized, "Authentication required")
+		return
+	}
+
+	submissionId := r.PathValue("submissionId")
+	if submissionId == "" {
+		lib.JSONError(w, http.StatusBadRequest, "Invalid submission ID")
+		return
+	}
+
+	ctx := r.Context()
+
+	submission, err := db.GetSubmissionStatus(ctx, submissionId, userCtx.UserID)
+	if err != nil {
+		if strings.Contains(err.Error(), "no rows") {
+			lib.JSONError(w, http.StatusNotFound, "Submission not found")
+			return
+		}
+		log.Printf("Error fetching submission status for id %s, user %s: %v", submissionId, userCtx.UserID, err)
+		lib.InternalErrorHandler(w)
+		return
+	}
+
+	// Only include test case counts when submission is complete
+	var testCasesPassed, testCasesTotal *int
+	if submission.Status != models.StatusPending && submission.Status != models.StatusRunning {
+		testCasesPassed = &submission.TestCasesPassed
+		testCasesTotal = &submission.TestCasesTotal
+	}
+
+	response := types.SubmissionStatusResponse{
+		Status:          string(submission.Status),
+		RuntimeMs:       submission.RuntimeMs,
+		MemoryUsedMb:    submission.MemoryUsedMb,
+		TestCasesPassed: testCasesPassed,
+		TestCasesTotal:  testCasesTotal,
+		ErrorMessage:    submission.ErrorMessage,
+	}
+
+	lib.JSON(w, http.StatusOK, response)
+}
+
+func GetLatestSubmissionForProblem(w http.ResponseWriter, r *http.Request) {
+	userCtx := middlewares.GetUserContext(r)
+	if userCtx == nil {
+		lib.JSONError(w, http.StatusUnauthorized, "Authentication required")
+		return
+	}
+
+	problemId := r.PathValue("problemId")
+	if problemId == "" {
+		lib.JSONError(w, http.StatusBadRequest, "Invalid problem ID")
+		return
+	}
+
+	ctx := r.Context()
+
+	submission, err := db.GetLatestSubmissionForProblem(ctx, userCtx.UserID, problemId)
+	if err != nil {
+		if strings.Contains(err.Error(), "no rows") {
+			lib.JSONError(w, http.StatusNotFound, "No submissions found for this problem")
+			return
+		}
+		log.Printf("Error fetching latest submission for problem %s, user %s: %v", problemId, userCtx.UserID, err)
+		lib.InternalErrorHandler(w)
+		return
+	}
+
+	response := types.LatestSubmissionResponse{
+		Code:        submission.Code,
+		Language:    submission.Language,
+		SubmittedAt: submission.SubmittedAt.Format("2006-01-02T15:04:05Z07:00"),
+	}
+
+	lib.JSON(w, http.StatusOK, response)
 }

@@ -1,7 +1,7 @@
 -- +goose Up
 -- +goose StatementBegin
 CREATE TYPE submission_status AS ENUM ('pending', 'running', 'accepted', 'wrong_answer', 'time_limit_exceeded', 'memory_limit_exceeded', 'runtime_error', 'compilation_error');
-CREATE TYPE submission_type as ENUM ('run', 'submit')
+CREATE TYPE submission_type as ENUM ('run', 'submit');
 
 CREATE TABLE IF NOT EXISTS submissions(
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
