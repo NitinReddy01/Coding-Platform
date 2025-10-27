@@ -19,3 +19,12 @@ func SubmissionRoutes(cfg *config.Config) *chi.Mux {
 
 	return router
 }
+
+func InternalSubmissionRoutes() *chi.Mux {
+	router := chi.NewRouter()
+
+	router.Patch("/{submissionId}/status", UpdateSubmissionStatusInternal)
+	router.Patch("/{submissionId}/result", SaveSubmissionResultInternal)
+
+	return router
+}

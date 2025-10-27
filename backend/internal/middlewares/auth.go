@@ -65,3 +65,23 @@ func GetUserContext(r *http.Request) *UserContext {
 	}
 	return nil
 }
+
+func WorkerAuthMiddleware(apiKey string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			workerKey := r.Header.Get("X-Worker-API-Key")
+
+			if workerKey == "" {
+				lib.JSONError(w, http.StatusUnauthorized, "Worker API key required")
+				return
+			}
+
+			if workerKey != apiKey {
+				lib.JSONError(w, http.StatusUnauthorized, "Invalid worker API key")
+				return
+			}
+
+			next.ServeHTTP(w, r)
+		})
+	}
+}

@@ -2,10 +2,10 @@ package main
 
 import (
 	"app/internal/config"
-	"app/internal/db"
 	"app/internal/executor"
 	"app/internal/lib/types"
 	"app/internal/models"
+	"app/internal/services/api_client"
 	"app/internal/services/queue"
 	"context"
 	"fmt"
@@ -14,6 +14,14 @@ import (
 	"path/filepath"
 	"strings"
 )
+
+// truncateString truncates a string to maxLen characters and adds "..." if truncated
+func truncateString(s string, maxLen int) string {
+	if len(s) <= maxLen {
+		return s
+	}
+	return s[:maxLen] + "..."
+}
 
 func main() {
 	cfg := config.Load()
@@ -27,11 +35,14 @@ func main() {
 	defaultMemLimit := 256
 	exec := executor.NewExecutor(workDir, defaultMemLimit)
 
+	// Create API client for communicating with API server
+	apiClient := api_client.NewClient(cfg.APIBaseURL, cfg.WorkerAPIKey)
+
 	log.Println("Code execution worker starting...")
 	log.Printf("Work directory: %s", workDir)
 	log.Printf("RabbitMQ URL: %s", cfg.RabbitMQURL)
+	log.Printf("API Base URL: %s", cfg.APIBaseURL)
 
-	db.Connect(cfg.DB_URL)
 	ctx := context.Background()
 
 	handleSubmission := func(submission *types.Submission) error {
@@ -42,7 +53,8 @@ func main() {
 			submission.MemLimit = 256
 		}
 
-		err := db.UpdateSubmissionStatus(ctx, submission.SubmissionId, models.StatusRunning)
+		// Update status to running via API
+		err := apiClient.UpdateStatusWithRetry(ctx, submission.SubmissionId, models.StatusRunning, 3)
 		if err != nil {
 			log.Printf("Failed to update status to running: %v", err)
 			return fmt.Errorf("failed to update status: %w", err)
@@ -50,8 +62,8 @@ func main() {
 
 		result, err := exec.Execute(submission)
 		if err != nil {
-			log.Printf("Execution failed for submission %s: %v", submission.SubmissionId, err)
-			if updateErr := db.UpdateSubmissionStatus(ctx, submission.SubmissionId, models.StatusRuntimeError); updateErr != nil {
+			log.Printf("❌ Execution failed for submission %s: %v", submission.SubmissionId, err)
+			if updateErr := apiClient.UpdateStatus(ctx, submission.SubmissionId, models.StatusRuntimeError); updateErr != nil {
 				log.Printf("Failed to update status to runtime error: %v", updateErr)
 			}
 			return fmt.Errorf("execution failed: %w", err)
@@ -62,6 +74,7 @@ func main() {
 
 		if result.CompileError != "" {
 			finalStatus = models.StatusCompilationError
+			log.Printf("❌ Compilation Error:\n%s", result.CompileError)
 		} else if result.RuntimeError != "" {
 			finalStatus = models.StatusRuntimeError
 		} else if result.Success {
@@ -81,14 +94,13 @@ func main() {
 			}
 		}
 
-		err = db.UpdateSubmissionStatus(ctx, submission.SubmissionId, finalStatus)
+		err = apiClient.UpdateStatusWithRetry(ctx, submission.SubmissionId, finalStatus, 3)
 		if err != nil {
 			log.Printf("Failed to update final status to %s: %v", finalStatus, err)
 			return fmt.Errorf("failed to update final status: %w", err)
 		}
 
-		// Store detailed results in database
-		err = db.SaveSubmissionResult(ctx, submission.SubmissionId, result)
+		err = apiClient.SaveResultWithRetry(ctx, submission.SubmissionId, result, 3)
 		if err != nil {
 			log.Printf("Failed to save submission result: %v", err)
 			return fmt.Errorf("failed to save submission result: %w", err)
