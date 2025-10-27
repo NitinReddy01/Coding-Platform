@@ -1,5 +1,14 @@
-# Minimal Python 3 image for secure code execution
-FROM python:3.11-alpine
+# Multi-language code executor image supporting multiple languages
+# Base: Alpine Linux (minimal, secure)
+FROM alpine:3.19
+
+# Install language runtimes and compilers
+RUN apk add --no-cache \
+    python3 \
+    g++ \
+    nodejs \
+    npm \
+    openjdk17-jdk
 
 # Create a non-root user for running code
 # This prevents malicious code from having root privileges

@@ -71,7 +71,8 @@ export function ProblemPage() {
     };
 
     fetchLatestSubmission();
-  }, [problem, axiosPrivate, dispatch, languages, language]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [problem, axiosPrivate, dispatch, languages]);
 
   // Set default code when language changes (but only if no code exists)
   useEffect(() => {

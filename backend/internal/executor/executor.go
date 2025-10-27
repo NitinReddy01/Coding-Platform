@@ -11,7 +11,7 @@ import (
 // Implementations must provide batch execution and language identification.
 type LanguageRunner interface {
 	// ExecuteBatch runs code against multiple test cases in a single execution
-	ExecuteBatch(ctx context.Context, code string, testCases []models.TestCase, timeLimit int, memLimitMB int) ([]*ExecutionOutput, error)
+	ExecuteBatch(ctx context.Context, code string, testCases []models.TestCase, timeLimit int, memLimitMB int, language string) ([]*ExecutionOutput, error)
 
 	// GetLanguageName returns the language identifier (e.g., "python", "java")
 	GetLanguageName() string
@@ -34,12 +34,17 @@ type Executor struct {
 	runners map[string]LanguageRunner
 }
 
-// NewExecutor creates a new Executor with all supported language runners auto-registered.
+// NewExecutor creates a new Executor with the code runner supporting all languages.
 func NewExecutor(workDir string, memLimitMB int) *Executor {
 	runners := make(map[string]LanguageRunner)
 
-	pythonRunner := NewPythonRunner(workDir, memLimitMB)
-	runners[pythonRunner.GetLanguageName()] = pythonRunner
+	// Use code runner for all languages
+	codeRunner := NewCodeRunner(workDir, memLimitMB)
+
+	// Register the code runner for each supported language
+	for _, lang := range codeRunner.GetSupportedLanguages() {
+		runners[lang] = codeRunner
+	}
 
 	return &Executor{
 		runners: runners,
@@ -60,7 +65,7 @@ func (e *Executor) Execute(submission *types.Submission) (*models.ExecutionResul
 	ctx, cancel := context.WithTimeout(context.Background(), contextTimeout)
 	defer cancel()
 
-	outputs, err := runner.ExecuteBatch(ctx, submission.Code, submission.TestCases, submission.TimeLimit, submission.MemLimit)
+	outputs, err := runner.ExecuteBatch(ctx, submission.Code, submission.TestCases, submission.TimeLimit, submission.MemLimit, submission.Language)
 	if err != nil {
 		return nil, fmt.Errorf("batch execution failed: %w", err)
 	}
@@ -102,6 +107,14 @@ func (e *Executor) Execute(submission *types.Submission) (*models.ExecutionResul
 
 		if testResult.Error != "" && !testResult.Passed {
 			result.Success = false
+		}
+	}
+
+	// Check if there's a compilation error (all test cases fail with "Compilation error")
+	if len(result.TestResults) > 0 && result.TestResults[0].Error == "Compilation error" {
+		// Extract the actual compiler error from stderr
+		if len(outputs) > 0 && outputs[0].Stderr != "" {
+			result.CompileError = outputs[0].Stderr
 		}
 	}
 

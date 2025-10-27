@@ -37,6 +37,11 @@ func New(cfg *config.Config) *chi.Mux {
 			private.Mount("/mails", mail.MailRoutes(cfg))
 			private.Mount("/submissions", submissions.SubmissionRoutes(cfg))
 		})
+
+		r.Group(func(internal chi.Router) {
+			internal.Use(middlewares.WorkerAuthMiddleware(cfg.WorkerAPIKey))
+			internal.Mount("/internal/submissions", submissions.InternalSubmissionRoutes())
+		})
 	})
 
 	return r

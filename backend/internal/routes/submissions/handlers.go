@@ -203,3 +203,86 @@ func GetLatestSubmissionForProblem(w http.ResponseWriter, r *http.Request) {
 
 	lib.JSON(w, http.StatusOK, response)
 }
+
+func UpdateSubmissionStatusInternal(w http.ResponseWriter, r *http.Request) {
+	submissionId := r.PathValue("submissionId")
+	if submissionId == "" {
+		lib.JSONError(w, http.StatusBadRequest, "Invalid submission ID")
+		return
+	}
+
+	var req types.UpdateStatusRequest
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+
+	if err := decoder.Decode(&req); err != nil {
+		lib.JSONError(w, http.StatusBadRequest, "Invalid request body")
+		return
+	}
+
+	// Validate status
+	status := models.SubmissionStatus(req.Status)
+	if !status.IsValid() {
+		lib.JSONError(w, http.StatusBadRequest, "Invalid submission status")
+		return
+	}
+
+	ctx := r.Context()
+
+	err := db.UpdateSubmissionStatus(ctx, submissionId, status)
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			lib.JSONError(w, http.StatusNotFound, "Submission not found")
+			return
+		}
+		log.Printf("Error updating submission status for id %s: %v", submissionId, err)
+		lib.InternalErrorHandler(w)
+		return
+	}
+
+	lib.JSON(w, http.StatusOK, map[string]string{"message": "Status updated successfully"})
+}
+
+// SaveSubmissionResultInternal handles internal worker requests to save execution results
+func SaveSubmissionResultInternal(w http.ResponseWriter, r *http.Request) {
+	submissionId := r.PathValue("submissionId")
+	if submissionId == "" {
+		lib.JSONError(w, http.StatusBadRequest, "Invalid submission ID")
+		return
+	}
+
+	var req types.SaveResultRequest
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+
+	if err := decoder.Decode(&req); err != nil {
+		lib.JSONError(w, http.StatusBadRequest, "Invalid request body")
+		return
+	}
+
+	ctx := r.Context()
+
+	// Convert request to ExecutionResult model
+	result := &models.ExecutionResult{
+		Success:        req.Success,
+		CompileError:   req.CompileError,
+		RuntimeError:   req.RuntimeError,
+		MaxExecutionMs: req.MaxExecutionMs,
+		MaxMemoryKB:    req.MaxMemoryKB,
+		TotalPassed:    req.TotalPassed,
+		TestResults:    req.TestResults,
+	}
+
+	err := db.SaveSubmissionResult(ctx, submissionId, result)
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			lib.JSONError(w, http.StatusNotFound, "Submission not found")
+			return
+		}
+		log.Printf("Error saving submission result for id %s: %v", submissionId, err)
+		lib.InternalErrorHandler(w)
+		return
+	}
+
+	lib.JSON(w, http.StatusOK, map[string]string{"message": "Result saved successfully"})
+}

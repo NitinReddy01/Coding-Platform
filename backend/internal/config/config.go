@@ -23,6 +23,8 @@ type Config struct {
 	SMTPPort           int
 	SMTPSender         string
 	SMTPPassword       string
+	WorkerAPIKey       string
+	APIBaseURL         string
 }
 
 func Load() *Config {
@@ -96,6 +98,14 @@ func Load() *Config {
 		log.Fatal("SMTP_PASSWORD is required in .env file")
 	}
 
+	// Worker API configuration
+	workerAPIKey := getEnv("WORKER_API_KEY", "")
+	if workerAPIKey == "" {
+		log.Fatal("WORKER_API_KEY is required in .env file")
+	}
+
+	apiBaseURL := getEnv("API_BASE_URL", "http://localhost:4000")
+
 	config := &Config{
 		Port:               portString,
 		DB_URL:             dbUrl,
@@ -109,6 +119,8 @@ func Load() *Config {
 		SMTPPort:           smtpPort,
 		SMTPSender:         smtpSender,
 		SMTPPassword:       smtpPassword,
+		WorkerAPIKey:       workerAPIKey,
+		APIBaseURL:         apiBaseURL,
 	}
 	return config
 }
@@ -121,7 +133,6 @@ func getEnv(key string, fallback string) string {
 	return fallback
 }
 
-// parseAllowedOrigins parses a comma-separated string of origins into a slice
 func parseAllowedOrigins(originsStr string) []string {
 	if originsStr == "" {
 		return []string{}

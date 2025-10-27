@@ -143,7 +143,7 @@ export function SubmissionStatusBanner({
 
       {/* Error Details */}
       {errorMessage && !isProcessing && (
-        <div className="mt-4 p-3 rounded-md bg-muted/30 border border-border">
+        <div className="mt-4 p-3 rounded-md bg-muted/30 border border-border max-h-48 overflow-y-auto">
           <p className="text-xs font-semibold text-muted-foreground mb-1">Error Details:</p>
           <pre className="text-sm text-foreground font-mono whitespace-pre-wrap break-words">
             {errorMessage}

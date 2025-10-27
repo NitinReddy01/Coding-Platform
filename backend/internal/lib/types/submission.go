@@ -58,3 +58,17 @@ type LatestSubmissionResponse struct {
 	Language    string `json:"language"`     // Programming language used
 	SubmittedAt string `json:"submitted_at"` // ISO 8601 timestamp of submission
 }
+
+type UpdateStatusRequest struct {
+	Status string `json:"status"`
+}
+
+type SaveResultRequest struct {
+	Success        bool                    `json:"success"`
+	CompileError   string                  `json:"compile_error,omitempty"`
+	RuntimeError   string                  `json:"runtime_error,omitempty"`
+	MaxExecutionMs int64                   `json:"max_execution_ms"`
+	MaxMemoryKB    int64                   `json:"max_memory_kb"`
+	TotalPassed    int                     `json:"total_passed"`
+	TestResults    []models.TestCaseResult `json:"test_results"`
+}
