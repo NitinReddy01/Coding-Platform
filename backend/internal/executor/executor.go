@@ -165,7 +165,7 @@ func (e *Executor) processTestCaseOutput(testCase models.TestCase, output *Execu
 		testResult.Passed = true
 	} else {
 		testResult.Passed = false
-		testResult.Error = "Output mismatch"
+		// No error set - wrong answer is not an error, frontend will show both outputs
 	}
 
 	return testResult

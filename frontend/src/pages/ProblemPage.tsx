@@ -39,6 +39,7 @@ export function ProblemPage() {
     testCasesPassed,
     testCasesTotal,
     errorMessage,
+    sampleTestResults,
     isPolling,
     submissionType,
     runCode,
@@ -159,6 +160,7 @@ export function ProblemPage() {
       testCasesPassed={testCasesPassed}
       testCasesTotal={testCasesTotal}
       errorMessage={errorMessage}
+      sampleTestResults={sampleTestResults}
       submissionType={submissionType}
     />
   );

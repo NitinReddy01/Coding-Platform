@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../ui/tabs';
 import { TestCaseTabs } from '../submission/TestCaseTabs';
-import { ResultsSummary } from '../submission/ResultsSummary';
 import { StatusBadge } from '../submission/StatusBadge';
 import type { TestCase, ExecutionResult, SubmissionStatus, SubmissionType } from '../../types';
 
@@ -16,10 +15,11 @@ interface ConsolePanelProps {
   testCasesPassed?: number | null;
   testCasesTotal?: number | null;
   errorMessage?: string | null;
+  sampleTestResults?: ExecutionResult[] | null;
   submissionType: SubmissionType | null;
 }
 
-export function ConsolePanel({ sampleTestCases, results, error, status, isPolling, runtimeMs, memoryUsedMb, testCasesPassed, testCasesTotal, errorMessage, submissionType }: ConsolePanelProps) {
+export function ConsolePanel({ sampleTestCases, results, error, status, isPolling, runtimeMs, memoryUsedMb, testCasesPassed, testCasesTotal, errorMessage, sampleTestResults, submissionType }: ConsolePanelProps) {
   const [activeTab, setActiveTab] = useState<'testcases' | 'results'>('testcases');
 
   // Auto-switch tabs based on submission type
@@ -40,7 +40,7 @@ export function ConsolePanel({ sampleTestCases, results, error, status, isPollin
         </div>
       )}
 
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'testcases' | 'results')} className="flex-1 flex flex-col">
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'testcases' | 'results')} className="flex-1 flex flex-col min-h-0">
         <TabsList className="w-full justify-start rounded-none border-b bg-transparent">
           <TabsTrigger value="testcases" className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
             Test Cases
@@ -50,11 +50,16 @@ export function ConsolePanel({ sampleTestCases, results, error, status, isPollin
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="testcases" className="flex-1 mt-0 overflow-hidden">
-          <TestCaseTabs testCases={sampleTestCases} mode="input" />
+        <TabsContent value="testcases" className="flex-1 mt-0 overflow-auto min-h-0">
+          <TestCaseTabs
+            testCases={sampleTestCases}
+            results={sampleTestResults || undefined}
+            mode={sampleTestResults && sampleTestResults.length > 0 ? "result" : "input"}
+            errorMessage={errorMessage}
+          />
         </TabsContent>
 
-        <TabsContent value="results" className="flex-1 mt-0">
+        <TabsContent value="results" className="flex-1 mt-0 overflow-auto min-h-0">
           {error ? (
             <div className="p-4">
               <div className="rounded-lg bg-destructive/10 border-2 border-destructive/30 p-4">
@@ -72,7 +77,7 @@ export function ConsolePanel({ sampleTestCases, results, error, status, isPollin
               </div>
             </div>
           ) : (
-            <div className="p-4 overflow-auto h-full">
+            <div className="p-4 h-full">
               <div className="space-y-3">
                 {/* Compact Status Bar */}
                 <div className={`flex items-center gap-3 p-3 rounded-lg border ${
@@ -140,8 +145,8 @@ export function ConsolePanel({ sampleTestCases, results, error, status, isPollin
                   )}
                 </div>
 
-                {/* Error Message */}
-                {errorMessage && (
+                {/* Error Message - Only show for Submit mode, Run mode shows in Test Cases tab */}
+                {errorMessage && submissionType === 'submit' && (
                   <div className="rounded-lg bg-destructive/10 border border-destructive/30 p-3">
                     <p className="text-xs font-semibold text-destructive mb-2">Error Details:</p>
                     <pre className="text-sm text-destructive font-mono whitespace-pre-wrap break-words bg-destructive/5 p-3 rounded border border-destructive/20 max-h-60 overflow-y-auto leading-relaxed">

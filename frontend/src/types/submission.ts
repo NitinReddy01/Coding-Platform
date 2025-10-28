@@ -21,26 +21,13 @@ export interface Submission {
   type: SubmissionType;
 }
 export interface ExecutionResult {
-  /** Index of the test case (0-based) */
-  test_case_index: number;
-  /** Whether the output matched the expected output */
   passed: boolean;
-  /** Input provided to the code */
   input: string;
-  /** Actual output produced by the code */
-  output: string;
-  /** Expected output for comparison */
+  actual_output: string;
   expected_output: string;
-  /** Error message if execution failed (runtime error, compile error, etc.) */
   error?: string;
-  /** Time taken to execute in milliseconds */
   execution_time?: number;
-  /** Memory consumed in megabytes */
   memory_used?: number;
-  /** Whether execution exceeded the time limit */
-  is_timeout?: boolean;
-  /** Whether execution ran out of memory */
-  is_oom?: boolean;
 }
 
 /**
@@ -75,6 +62,8 @@ export interface SubmissionStatusResponse {
   test_cases_total?: number;
   /** Error message if any (only on error statuses) */
   error_message?: string;
+  /** Results for sample test cases (only when complete, for debugging) */
+  sample_test_results?: ExecutionResult[];
 }
 
 /**

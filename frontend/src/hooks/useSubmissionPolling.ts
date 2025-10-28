@@ -74,6 +74,7 @@ export const useSubmissionPolling = (submissionId: string | null) => {
     testCasesPassed: statusData?.test_cases_passed ?? null,
     testCasesTotal: statusData?.test_cases_total ?? null,
     errorMessage: statusData?.error_message ?? null,
+    sampleTestResults: statusData?.sample_test_results ?? null,
     isPolling,
     error,
   };
