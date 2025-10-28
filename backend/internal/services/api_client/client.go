@@ -63,22 +63,30 @@ func (c *Client) UpdateStatus(ctx context.Context, submissionId string, status m
 		return fmt.Errorf("API returned status %d: %s", resp.StatusCode, string(bodyBytes))
 	}
 
-	log.Printf("Successfully updated submission %s status to %s", submissionId, status)
 	return nil
 }
 
 // SaveResult saves the execution result
-func (c *Client) SaveResult(ctx context.Context, submissionId string, result *models.ExecutionResult) error {
+func (c *Client) SaveResult(ctx context.Context, submissionId string, result *models.ExecutionResult, testCases []models.TestCase) error {
 	url := fmt.Sprintf("%s/api/internal/submissions/%s/result", c.baseURL, submissionId)
 
+	// Extract only sample test results for debugging
+	sampleTestResults := make([]models.TestCaseResult, 0)
+	for i, testResult := range result.TestResults {
+		if i < len(testCases) && testCases[i].IsSample {
+			sampleTestResults = append(sampleTestResults, testResult)
+		}
+	}
+
 	req := types.SaveResultRequest{
-		Success:        result.Success,
-		CompileError:   result.CompileError,
-		RuntimeError:   result.RuntimeError,
-		MaxExecutionMs: result.MaxExecutionMs,
-		MaxMemoryKB:    result.MaxMemoryKB,
-		TotalPassed:    result.TotalPassed,
-		TestResults:    result.TestResults,
+		Success:           result.Success,
+		CompileError:      result.CompileError,
+		RuntimeError:      result.RuntimeError,
+		MaxExecutionMs:    result.MaxExecutionMs,
+		MaxMemoryKB:       result.MaxMemoryKB,
+		TotalPassed:       result.TotalPassed,
+		TestResults:       result.TestResults,
+		SampleTestResults: sampleTestResults,
 	}
 
 	body, err := json.Marshal(req)
@@ -105,7 +113,6 @@ func (c *Client) SaveResult(ctx context.Context, submissionId string, result *mo
 		return fmt.Errorf("API returned status %d: %s", resp.StatusCode, string(bodyBytes))
 	}
 
-	log.Printf("Successfully saved submission %s result", submissionId)
 	return nil
 }
 
@@ -137,12 +144,12 @@ func (c *Client) UpdateStatusWithRetry(ctx context.Context, submissionId string,
 }
 
 // SaveResultWithRetry saves result with exponential backoff retry
-func (c *Client) SaveResultWithRetry(ctx context.Context, submissionId string, result *models.ExecutionResult, maxRetries int) error {
+func (c *Client) SaveResultWithRetry(ctx context.Context, submissionId string, result *models.ExecutionResult, testCases []models.TestCase, maxRetries int) error {
 	var lastErr error
 	backoff := 1 * time.Second
 
 	for attempt := 0; attempt < maxRetries; attempt++ {
-		err := c.SaveResult(ctx, submissionId, result)
+		err := c.SaveResult(ctx, submissionId, result, testCases)
 		if err == nil {
 			return nil
 		}

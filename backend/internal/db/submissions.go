@@ -67,7 +67,7 @@ func UpdateSubmissionStatus(ctx context.Context, submissionId string, status mod
 func GetSubmissionStatus(ctx context.Context, submissionId string, userId string) (*models.Submission, error) {
 	query := `
 		SELECT
-			status, runtime_ms, memory_used_mb, test_cases_passed, test_cases_total, error_message
+			status, runtime_ms, memory_used_mb, test_cases_passed, test_cases_total, error_message, sample_test_results
 		FROM submissions
 		WHERE id = $1 AND user_id = $2
 	`
@@ -80,6 +80,7 @@ func GetSubmissionStatus(ctx context.Context, submissionId string, userId string
 		&submission.TestCasesPassed,
 		&submission.TestCasesTotal,
 		&submission.ErrorMessage,
+		&submission.SampleTestResults,
 	)
 
 	if err != nil {
@@ -89,7 +90,7 @@ func GetSubmissionStatus(ctx context.Context, submissionId string, userId string
 	return &submission, nil
 }
 
-func SaveSubmissionResult(ctx context.Context, submissionId string, result *models.ExecutionResult) error {
+func SaveSubmissionResult(ctx context.Context, submissionId string, result *models.ExecutionResult, sampleTestResults []models.TestCaseResult) error {
 	// KB to MB
 	memoryUsedMb := float64(result.MaxMemoryKB) / 1024.0
 
@@ -114,8 +115,9 @@ func SaveSubmissionResult(ctx context.Context, submissionId string, result *mode
 			memory_used_mb = $2,
 			test_cases_passed = $3,
 			error_message = $4,
+			sample_test_results = $5,
 			completed_at = NOW()
-		WHERE id = $5
+		WHERE id = $6
 	`
 
 	result_exec, err := Pool.Exec(ctx, query,
@@ -123,6 +125,7 @@ func SaveSubmissionResult(ctx context.Context, submissionId string, result *mode
 		memoryUsedMb,
 		result.TotalPassed,
 		errorMessage,
+		sampleTestResults,
 		submissionId,
 	)
 

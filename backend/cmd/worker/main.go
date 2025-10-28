@@ -77,7 +77,7 @@ func main() {
 			log.Printf("❌ Compilation Error:\n%s", result.CompileError)
 		} else if result.RuntimeError != "" {
 			finalStatus = models.StatusRuntimeError
-		} else if result.Success {
+		} else if result.TotalPassed == result.TotalTests {
 			finalStatus = models.StatusAccepted
 		} else {
 			// Check individual test results to determine specific failure reason
@@ -100,7 +100,7 @@ func main() {
 			return fmt.Errorf("failed to update final status: %w", err)
 		}
 
-		err = apiClient.SaveResultWithRetry(ctx, submission.SubmissionId, result, 3)
+		err = apiClient.SaveResultWithRetry(ctx, submission.SubmissionId, result, submission.TestCases, 3)
 		if err != nil {
 			log.Printf("Failed to save submission result: %v", err)
 			return fmt.Errorf("failed to save submission result: %w", err)

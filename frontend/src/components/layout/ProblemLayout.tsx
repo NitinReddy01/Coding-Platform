@@ -26,10 +26,11 @@ interface ProblemLayoutProps {
   testCasesPassed?: number | null;
   testCasesTotal?: number | null;
   errorMessage?: string | null;
+  sampleTestResults?: ExecutionResult[] | null;
   submissionType: SubmissionType | null;
 }
 
-export function ProblemLayout({ problem, onRun, onSubmit, runCodeFn, submitCodeFn, results, isRunning, isSubmitting, submissionError, status, isPolling, runtimeMs, memoryUsedMb, testCasesPassed, testCasesTotal, errorMessage, submissionType }: ProblemLayoutProps) {
+export function ProblemLayout({ problem, onRun, onSubmit, runCodeFn, submitCodeFn, results, isRunning, isSubmitting, submissionError, status, isPolling, runtimeMs, memoryUsedMb, testCasesPassed, testCasesTotal, errorMessage, sampleTestResults, submissionType }: ProblemLayoutProps) {
   const [leftWidth, setLeftWidth] = useState(40); // percentage
   const [bottomHeight, setBottomHeight] = useState(40); // percentage
   const [isResizing, setIsResizing] = useState<'horizontal' | 'vertical' | null>(null);
@@ -150,6 +151,7 @@ export function ProblemLayout({ problem, onRun, onSubmit, runCodeFn, submitCodeF
               testCasesPassed={testCasesPassed}
               testCasesTotal={testCasesTotal}
               errorMessage={errorMessage}
+              sampleTestResults={sampleTestResults}
               submissionType={submissionType}
             />
           </div>
@@ -188,6 +190,7 @@ export function ProblemLayout({ problem, onRun, onSubmit, runCodeFn, submitCodeF
                 testCasesPassed={testCasesPassed}
                 testCasesTotal={testCasesTotal}
                 errorMessage={errorMessage}
+                sampleTestResults={sampleTestResults}
                 submissionType={submissionType}
               />
             </div>

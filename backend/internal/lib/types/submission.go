@@ -43,12 +43,13 @@ type SubmissionResponse struct {
 // Used by frontend to poll submission progress and completion
 // Note: No progressive test case updates - status changes from pending -> running -> final state
 type SubmissionStatusResponse struct {
-	Status          string   `json:"status"`                      // Current status: pending, running, accepted, etc.
-	RuntimeMs       *int     `json:"runtime_ms,omitempty"`        // Max runtime in milliseconds (only when complete)
-	MemoryUsedMb    *float64 `json:"memory_used_mb,omitempty"`    // Max memory used in MB (only when complete)
-	TestCasesPassed *int     `json:"test_cases_passed,omitempty"` // Number of test cases passed (only when complete)
-	TestCasesTotal  *int     `json:"test_cases_total,omitempty"`  // Total number of test cases (only when complete)
-	ErrorMessage    *string  `json:"error_message,omitempty"`     // Error message if any (only on error statuses)
+	Status            string                  `json:"status"`                        // Current status: pending, running, accepted, etc.
+	RuntimeMs         *int                    `json:"runtime_ms,omitempty"`          // Max runtime in milliseconds (only when complete)
+	MemoryUsedMb      *float64                `json:"memory_used_mb,omitempty"`      // Max memory used in MB (only when complete)
+	TestCasesPassed   *int                    `json:"test_cases_passed,omitempty"`   // Number of test cases passed (only when complete)
+	TestCasesTotal    *int                    `json:"test_cases_total,omitempty"`    // Total number of test cases (only when complete)
+	ErrorMessage      *string                 `json:"error_message,omitempty"`       // Error message if any (only on error statuses)
+	SampleTestResults []models.TestCaseResult `json:"sample_test_results,omitempty"` // Results for sample test cases only (for debugging)
 }
 
 // LatestSubmissionResponse represents the user's most recent submission for a problem
@@ -64,11 +65,12 @@ type UpdateStatusRequest struct {
 }
 
 type SaveResultRequest struct {
-	Success        bool                    `json:"success"`
-	CompileError   string                  `json:"compile_error,omitempty"`
-	RuntimeError   string                  `json:"runtime_error,omitempty"`
-	MaxExecutionMs int64                   `json:"max_execution_ms"`
-	MaxMemoryKB    int64                   `json:"max_memory_kb"`
-	TotalPassed    int                     `json:"total_passed"`
-	TestResults    []models.TestCaseResult `json:"test_results"`
+	Success           bool                    `json:"success"`
+	CompileError      string                  `json:"compile_error,omitempty"`
+	RuntimeError      string                  `json:"runtime_error,omitempty"`
+	MaxExecutionMs    int64                   `json:"max_execution_ms"`
+	MaxMemoryKB       int64                   `json:"max_memory_kb"`
+	TotalPassed       int                     `json:"total_passed"`
+	TestResults       []models.TestCaseResult `json:"test_results"`
+	SampleTestResults []models.TestCaseResult `json:"sample_test_results,omitempty"` // Only sample test results for debugging
 }

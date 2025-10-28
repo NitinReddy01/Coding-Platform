@@ -22,6 +22,7 @@ export const useSubmission = () => {
     testCasesPassed,
     testCasesTotal,
     errorMessage,
+    sampleTestResults,
     isPolling,
     error: pollingError,
   } = useSubmissionPolling(submissionId);
@@ -96,6 +97,7 @@ export const useSubmission = () => {
     testCasesPassed,
     testCasesTotal,
     errorMessage,
+    sampleTestResults,
     isPolling,
     // Actions
     runCode: handleRunCode,

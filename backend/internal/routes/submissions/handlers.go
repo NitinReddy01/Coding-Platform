@@ -150,20 +150,23 @@ func GetSubmissionStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Only include test case counts when submission is complete
+	// Only include test case counts and sample results when submission is complete
 	var testCasesPassed, testCasesTotal *int
+	var sampleTestResults []models.TestCaseResult
 	if submission.Status != models.StatusPending && submission.Status != models.StatusRunning {
 		testCasesPassed = &submission.TestCasesPassed
 		testCasesTotal = &submission.TestCasesTotal
+		sampleTestResults = submission.SampleTestResults
 	}
 
 	response := types.SubmissionStatusResponse{
-		Status:          string(submission.Status),
-		RuntimeMs:       submission.RuntimeMs,
-		MemoryUsedMb:    submission.MemoryUsedMb,
-		TestCasesPassed: testCasesPassed,
-		TestCasesTotal:  testCasesTotal,
-		ErrorMessage:    submission.ErrorMessage,
+		Status:            string(submission.Status),
+		RuntimeMs:         submission.RuntimeMs,
+		MemoryUsedMb:      submission.MemoryUsedMb,
+		TestCasesPassed:   testCasesPassed,
+		TestCasesTotal:    testCasesTotal,
+		ErrorMessage:      submission.ErrorMessage,
+		SampleTestResults: sampleTestResults,
 	}
 
 	lib.JSON(w, http.StatusOK, response)
@@ -273,7 +276,7 @@ func SaveSubmissionResultInternal(w http.ResponseWriter, r *http.Request) {
 		TestResults:    req.TestResults,
 	}
 
-	err := db.SaveSubmissionResult(ctx, submissionId, result)
+	err := db.SaveSubmissionResult(ctx, submissionId, result, req.SampleTestResults)
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {
 			lib.JSONError(w, http.StatusNotFound, "Submission not found")
