@@ -24,7 +24,7 @@ import { createProblem } from '../api/problems';
 import { getErrorMessage } from '../utils/errorHandler';
 
 const STORAGE_KEY = 'problem-form-draft';
-const STEPS: FormStep[] = ['details', 'test-cases', 'tags', 'preview'];
+const STEPS: FormStep[] = ['details', 'test-cases', 'validator', 'tags', 'preview'];
 
 /**
  * Problem form management hook
@@ -346,6 +346,8 @@ export const useProblemForm = (): ProblemFormState & ProblemFormActions => {
         time_limit: data.time_limit,
         memory_limit: data.memory_limit,
         constraints: data.constraints?.trim() || undefined,
+        validator_code: data.validator_code?.trim() || undefined,
+        validator_language: data.validator_language,
         test_cases: data.test_cases.map((tc) => ({
           input: tc.input,
           expected_output: tc.expected_output,

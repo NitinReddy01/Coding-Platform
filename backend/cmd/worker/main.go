@@ -15,14 +15,6 @@ import (
 	"strings"
 )
 
-// truncateString truncates a string to maxLen characters and adds "..." if truncated
-func truncateString(s string, maxLen int) string {
-	if len(s) <= maxLen {
-		return s
-	}
-	return s[:maxLen] + "..."
-}
-
 func main() {
 	cfg := config.Load()
 
@@ -53,7 +45,17 @@ func main() {
 			submission.MemLimit = 256
 		}
 
-		// Update status to running via API
+		if submission.ValidatorCode != nil && *submission.ValidatorCode != "" {
+			validatorLanguage := submission.ValidatorLanguage
+			if validatorLanguage == "" {
+				validatorLanguage = "python"
+			}
+			validator := executor.NewCustomCodeValidator(*submission.ValidatorCode, validatorLanguage)
+			exec.SetValidator(validator)
+		} else {
+			exec.SetValidator(nil)
+		}
+
 		err := apiClient.UpdateStatusWithRetry(ctx, submission.SubmissionId, models.StatusRunning, 3)
 		if err != nil {
 			log.Printf("Failed to update status to running: %v", err)
@@ -69,7 +71,6 @@ func main() {
 			return fmt.Errorf("execution failed: %w", err)
 		}
 
-		// Determine final status based on execution results
 		var finalStatus models.SubmissionStatus
 
 		if result.CompileError != "" {
@@ -80,8 +81,7 @@ func main() {
 		} else if result.TotalPassed == result.TotalTests {
 			finalStatus = models.StatusAccepted
 		} else {
-			// Check individual test results to determine specific failure reason
-			finalStatus = models.StatusWrongAnswer // default
+			finalStatus = models.StatusWrongAnswer
 			for _, testResult := range result.TestResults {
 				if strings.Contains(testResult.Error, "Time limit exceeded") {
 					finalStatus = models.StatusTimeLimitExceeded

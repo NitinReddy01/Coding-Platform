@@ -26,12 +26,14 @@ type SubmissionRequest struct {
 }
 
 type Submission struct {
-	SubmissionId string            `json:"submission_id"`
-	Code         string            `json:"code"`
-	Language     string            `json:"language"`
-	TestCases    []models.TestCase `json:"test_cases"`
-	TimeLimit    int               `json:"time_limit"`
-	MemLimit     int               `json:"memory_limit"`
+	SubmissionId      string            `json:"submission_id"`
+	Code              string            `json:"code"`
+	Language          string            `json:"language"`
+	TestCases         []models.TestCase `json:"test_cases"`
+	TimeLimit         int               `json:"time_limit"`
+	MemLimit          int               `json:"memory_limit"`
+	ValidatorCode     *string           `json:"validator_code,omitempty"`
+	ValidatorLanguage string            `json:"validator_language,omitempty"`
 }
 
 type SubmissionResponse struct {

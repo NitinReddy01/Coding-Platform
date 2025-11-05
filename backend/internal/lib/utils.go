@@ -15,7 +15,7 @@ func JSON(w http.ResponseWriter, status int, data interface{}) {
 	}
 	err := json.NewEncoder(w).Encode(data)
 	if err != nil {
-		JSONError(w, http.StatusInternalServerError, "Internal server error")
+		json.NewEncoder(w).Encode(models.ErrorResponse{Message: "Internal server error"})
 	}
 }
 

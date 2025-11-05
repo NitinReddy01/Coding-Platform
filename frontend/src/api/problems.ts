@@ -8,9 +8,32 @@
  */
 
 import type { AxiosInstance } from 'axios';
-import type { Language, Problem, ProblemMode } from '../types';
+import type { Language, Problem, ProblemMode, TestCase } from '../types';
 import type { PaginatedProblemsResponse } from '../types/problemList';
 import type { ProblemInput } from '../types/problem-form';
+
+/**
+ * Validator test result for a single test case
+ */
+export interface ValidatorTestResult {
+  test_case_id: string;
+  input: string;
+  expected: string;
+  passed: boolean;
+  error?: string;
+  debug_output?: string; // stderr from validator for debugging
+  is_sample: boolean; // whether this is a sample test case (visible to users)
+  order_index: number;
+}
+
+/**
+ * Response from validator testing endpoint
+ */
+export interface ValidateValidatorResponse {
+  valid: boolean;
+  results: ValidatorTestResult[];
+  message?: string;
+}
 
 /**
  * Fetches a single problem by its ID
@@ -138,4 +161,50 @@ export const createProblem = async (
   problemData: ProblemInput
 ): Promise<void> => {
   await axiosInstance.post('/problems', problemData);
+};
+
+/**
+ * Tests a custom validator against sample test cases
+ *
+ * @param axiosInstance - Axios instance (use useAxiosPrivate hook)
+ * @param validatorCode - Python validator code
+ * @param validatorLanguage - Validator language (currently only "python" supported)
+ * @param testCases - Array of test cases to validate against
+ * @returns Promise resolving to validation results
+ * @throws Error if the validation request fails
+ *
+ * @example
+ * ```typescript
+ * const axiosPrivate = useAxiosPrivate();
+ * const result = await testValidator(
+ *   axiosPrivate,
+ *   validatorCode,
+ *   'python',
+ *   sampleTestCases
+ * );
+ * if (result.valid) {
+ *   console.log('Validator passed all test cases');
+ * } else {
+ *   console.log('Validator failed:', result.message);
+ *   result.results.forEach(r => {
+ *     if (!r.passed) console.log(`Test case ${r.order_index}: ${r.error}`);
+ *   });
+ * }
+ * ```
+ */
+export const testValidator = async (
+  axiosInstance: AxiosInstance,
+  validatorCode: string,
+  validatorLanguage: string,
+  testCases: TestCase[]
+): Promise<ValidateValidatorResponse> => {
+  const response = await axiosInstance.post<ValidateValidatorResponse>(
+    '/problems/validate-validator',
+    {
+      validator_code: validatorCode,
+      validator_language: validatorLanguage,
+      test_cases: testCases,
+    }
+  );
+  return response.data;
 };
