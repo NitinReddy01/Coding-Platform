@@ -51,9 +51,6 @@ const initialState: SubmissionsState = {
   isModalOpen: false,
 };
 
-/**
- * Filter submissions based on current filters
- */
 function filterSubmissions(submissions: SubmissionDetail[], filters: SubmissionsFilters): SubmissionDetail[] {
   return submissions.filter((submission) => {
     // Status filter
@@ -74,7 +71,7 @@ function filterSubmissions(submissions: SubmissionDetail[], filters: Submissions
     // Date range filter
     if (filters.dateFrom) {
       const from = new Date(filters.dateFrom);
-      if (submission.submitted_at < from) {
+      if (new Date(submission.submitted_at) < from) {
         return false;
       }
     }
@@ -82,7 +79,7 @@ function filterSubmissions(submissions: SubmissionDetail[], filters: Submissions
     if (filters.dateTo) {
       const to = new Date(filters.dateTo);
       to.setHours(23, 59, 59, 999); // End of day
-      if (submission.submitted_at > to) {
+      if (new Date(submission.submitted_at) > to) {
         return false;
       }
     }
@@ -102,7 +99,7 @@ function sortSubmissions(submissions: SubmissionDetail[], sort: SubmissionsSort)
 
     switch (sort.field) {
       case 'submitted_at':
-        comparison = a.submitted_at.getTime() - b.submitted_at.getTime();
+        comparison = new Date(a.submitted_at).getTime() - new Date(b.submitted_at).getTime();
         break;
       case 'problem_title':
         comparison = a.problem_title.localeCompare(b.problem_title);

@@ -1,12 +1,3 @@
-/**
- * Login page component
- *
- * Provides email/password login form and Google OAuth option.
- * Redirects to problems page on successful authentication.
- *
- * @module pages/LoginPage
- */
-
 import { useState, useEffect, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
@@ -37,7 +28,6 @@ export const LoginPage: React.FC = () => {
     e.preventDefault();
     setError('');
 
-    // Validation
     if (!email || !password) {
       setError('Please fill in all fields');
       return;
@@ -48,7 +38,6 @@ export const LoginPage: React.FC = () => {
       setPersist(rememberMe);
 
       await login({ email, password });
-      // Navigation handled by useAuth hook
     } catch (err) {
       const errorMessage = getErrorMessage(err, 'Login failed. Please try again.');
       setError(errorMessage);

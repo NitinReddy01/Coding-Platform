@@ -1,20 +1,11 @@
 import { useEffect } from 'react';
 
-/**
- * Platform-aware keyboard shortcut detection
- * Returns true if we're on macOS (uses Cmd), false for Windows/Linux (uses Ctrl)
- */
 export const isMac = () => {
   if (typeof window === 'undefined') return false;
   return /Mac|iPhone|iPad|iPod/.test(window.navigator.platform);
 };
 
-/**
- * Hook to register keyboard shortcuts
- * @param key - The key to listen for (e.g., 'Enter', 'Quote' for ')
- * @param callback - Function to call when shortcut is pressed
- * @param options - Configuration options
- */
+
 export function useKeyboardShortcut(
   key: string,
   callback: () => void,

@@ -1,12 +1,3 @@
-/**
- * Register page component
- *
- * Provides email/password registration form and Google OAuth option.
- * Redirects to problems page on successful registration.
- *
- * @module pages/RegisterPage
- */
-
 import { useState, useEffect, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
@@ -15,7 +6,6 @@ import { Label } from '../components/ui/Label';
 import { Card } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { getErrorMessage } from '../utils/errorHandler';
-
 
 
 export const RegisterPage: React.FC = () => {

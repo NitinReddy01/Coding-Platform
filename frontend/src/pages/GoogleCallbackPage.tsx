@@ -1,13 +1,3 @@
-/**
- * Google OAuth callback page component
- *
- * Handles the redirect from Google OAuth after user approval.
- * Extracts access token from URL, fetches user data, and redirects
- * to the problems page.
- *
- * @module pages/GoogleCallbackPage
- */
-
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch } from '../store/store';

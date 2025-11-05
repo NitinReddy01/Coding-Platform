@@ -4,7 +4,7 @@ import { useAxiosPrivate } from './useAxiosPrivate';
 import { getErrorMessage } from '../utils/errorHandler';
 import type { SubmissionStatus, SubmissionStatusResponse } from '../types';
 
-const POLL_INTERVAL_MS = 1500;
+const POLL_INTERVAL_MS = 800;
 const PROCESSING_STATUSES: SubmissionStatus[] = ['pending', 'running'];
 
 export const useSubmissionPolling = (submissionId: string | null) => {

@@ -4,7 +4,6 @@ import { Button } from '../ui/button';
 import { LanguageSelector } from './LanguageSelector';
 import { KeyboardBadge } from '../ui/KeyboardBadge';
 
-
 interface EditorToolbarProps {
   onRun: () => void;
   onSubmit: () => void;

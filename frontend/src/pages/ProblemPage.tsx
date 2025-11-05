@@ -16,17 +16,14 @@ export function ProblemPage() {
   const axiosPrivate = useAxiosPrivate();
   const [loadingLatestSubmission, setLoadingLatestSubmission] = useState(false);
 
-  // Redirect to problems list if no problem title in URL
   useEffect(() => {
     if (!title) {
       navigate('/problems', { replace: true });
     }
   }, [title, navigate]);
 
-  // Decode the URL parameter (URL-encoded title)
   const problemTitle = title ? decodeURIComponent(title) : '';
 
-  // Fetch problem using the title from URL
   const { problem, loading, error } = useProblem(problemTitle, 'practice');
   const {
     results,
