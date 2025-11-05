@@ -2,15 +2,18 @@ package problems
 
 import (
 	"app/internal/db"
+	"app/internal/executor"
 	"app/internal/lib"
 	"app/internal/lib/types"
 	"app/internal/middlewares"
 	"app/internal/models"
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"strings"
+	"time"
 )
 
 func GetLanguages(w http.ResponseWriter, r *http.Request) {
@@ -64,6 +67,140 @@ func GetProblemByTitle(w http.ResponseWriter, r *http.Request) {
 	lib.JSON(w, http.StatusOK, map[string]any{
 		"problem": problem,
 	})
+}
+
+// ValidateValidatorRequest represents the request body for validator testing
+type ValidateValidatorRequest struct {
+	ValidatorCode     string            `json:"validator_code"`
+	ValidatorLanguage string            `json:"validator_language"`
+	TestCases         []models.TestCase `json:"test_cases"`
+}
+
+// ValidatorTestResult represents the result of testing a validator against a test case
+type ValidatorTestResult struct {
+	TestCaseID  string `json:"test_case_id"`
+	Input       string `json:"input"`
+	Expected    string `json:"expected"`
+	Passed      bool   `json:"passed"`
+	Error       string `json:"error,omitempty"`
+	DebugOutput string `json:"debug_output,omitempty"` // stderr from validator
+	IsSample    bool   `json:"is_sample"`               // whether this is a sample test case
+	OrderIndex  int    `json:"order_index"`
+}
+
+// ValidateValidatorResponse represents the response for validator testing
+type ValidateValidatorResponse struct {
+	Valid   bool                  `json:"valid"`
+	Results []ValidatorTestResult `json:"results"`
+	Message string                `json:"message,omitempty"`
+}
+
+// ValidateValidator tests a custom validator against sample test cases
+func ValidateValidator(w http.ResponseWriter, r *http.Request) {
+	// Get authenticated user context
+	userCtx := middlewares.GetUserContext(r)
+	if userCtx == nil {
+		lib.JSONError(w, http.StatusUnauthorized, "Authentication required")
+		return
+	}
+
+	// Check if user has admin or author role
+	if !middlewares.HasAnyRole(userCtx, "admin", "author") {
+		lib.JSONError(w, http.StatusForbidden, "Insufficient permissions")
+		return
+	}
+
+	var req ValidateValidatorRequest
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	err := decoder.Decode(&req)
+	if err != nil {
+		lib.JSONError(w, http.StatusBadRequest, "Invalid request data")
+		return
+	}
+
+	// Validate required fields
+	if strings.TrimSpace(req.ValidatorCode) == "" {
+		lib.JSONError(w, http.StatusBadRequest, "Validator code is required")
+		return
+	}
+
+	if req.ValidatorLanguage != "python" {
+		lib.JSONError(w, http.StatusBadRequest, "Only Python validators are currently supported")
+		return
+	}
+
+	// Validate that test cases exist
+	if len(req.TestCases) == 0 {
+		lib.JSONError(w, http.StatusBadRequest, "At least one test case is required for validation")
+		return
+	}
+
+	// Create custom validator
+	validator := executor.NewCustomCodeValidator(req.ValidatorCode, req.ValidatorLanguage)
+
+	// Test validator against ALL test cases (samples + hidden) to catch edge cases
+	results := make([]ValidatorTestResult, 0, len(req.TestCases))
+	allPassed := true
+
+	for _, tc := range req.TestCases {
+		result := ValidatorTestResult{
+			TestCaseID: tc.ID,
+			Input:      tc.Input,
+			Expected:   tc.ExpectedOutput,
+			IsSample:   tc.IsSample,
+			OrderIndex: tc.OrderIndex,
+			Passed:     false,
+		}
+
+		// Create context with timeout
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+
+		// Test validator with expected output as actual output
+		// validator(input, expected, expected) should return true
+		validatorResult, err := validator.ValidateWithDebug(ctx, tc.Input, tc.ExpectedOutput, tc.ExpectedOutput)
+		cancel()
+
+		if err != nil {
+			log.Printf("Validator execution error for test case (order_index: %d, id: %s): %v", tc.OrderIndex, tc.ID, err)
+			result.Error = err.Error()
+			if validatorResult != nil {
+				result.DebugOutput = validatorResult.DebugOutput
+			}
+			allPassed = false
+		} else if validatorResult != nil {
+			result.Passed = validatorResult.Passed
+			result.DebugOutput = validatorResult.DebugOutput
+			if !validatorResult.Passed {
+				result.Error = "Validator rejected the expected output"
+				allPassed = false
+			}
+		}
+
+		results = append(results, result)
+	}
+
+	response := ValidateValidatorResponse{
+		Valid:   allPassed,
+		Results: results,
+	}
+
+	// Count samples and hidden test cases for better messaging
+	sampleCount := 0
+	for _, r := range results {
+		if r.IsSample {
+			sampleCount++
+		}
+	}
+	hiddenCount := len(results) - sampleCount
+
+	if allPassed {
+		response.Message = fmt.Sprintf("Validator passed all %d test cases (%d sample, %d hidden)", len(results), sampleCount, hiddenCount)
+	} else {
+		response.Message = fmt.Sprintf("Validator failed one or more test cases (%d sample, %d hidden)", sampleCount, hiddenCount)
+	}
+
+	lib.JSON(w, http.StatusOK, response)
 }
 
 func AddProblem(w http.ResponseWriter, r *http.Request) {
@@ -171,6 +308,53 @@ func AddProblem(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		orderIndexMap[tc.OrderIndex] = true
+	}
+
+	// Validate custom validator if provided
+	if problemData.ValidatorCode != nil && strings.TrimSpace(*problemData.ValidatorCode) != "" {
+		// Validate validator language
+		if problemData.ValidatorLanguage != "python" {
+			lib.JSONError(w, http.StatusBadRequest, "Only Python validators are currently supported")
+			return
+		}
+
+		// Filter sample test cases for validation
+		sampleTestCases := make([]models.TestCase, 0)
+		for _, tc := range problemData.TestCases {
+			if tc.IsSample {
+				sampleTestCases = append(sampleTestCases, tc)
+			}
+		}
+
+		if len(sampleTestCases) == 0 {
+			lib.JSONError(w, http.StatusBadRequest, "At least one sample test case is required when using a custom validator")
+			return
+		}
+
+		// Create and test the validator
+		validator := executor.NewCustomCodeValidator(*problemData.ValidatorCode, problemData.ValidatorLanguage)
+
+		validatorErrors := make([]string, 0)
+		for i, tc := range sampleTestCases {
+			// Create context with timeout for each test
+			validatorCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+
+			// Test validator with expected output as actual output
+			passed, err := validator.Validate(validatorCtx, tc.Input, tc.ExpectedOutput, tc.ExpectedOutput)
+			cancel()
+
+			if err != nil {
+				validatorErrors = append(validatorErrors, fmt.Sprintf("Sample test case %d: %s", i+1, err.Error()))
+			} else if !passed {
+				validatorErrors = append(validatorErrors, fmt.Sprintf("Sample test case %d: validator rejected the expected output", i+1))
+			}
+		}
+
+		if len(validatorErrors) > 0 {
+			errorMsg := "Validator validation failed:\n" + strings.Join(validatorErrors, "\n")
+			lib.JSONError(w, http.StatusBadRequest, errorMsg)
+			return
+		}
 	}
 
 	ctx := r.Context()

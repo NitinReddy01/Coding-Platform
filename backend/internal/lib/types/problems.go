@@ -11,6 +11,8 @@ type ProblemInput struct {
 	TimeLimit         int                    `json:"time_limit"`   // milliseconds
 	MemoryLimit       int                    `json:"memory_limit"` // MB
 	Constraints       *string                `json:"constraints,omitempty"`
+	ValidatorCode     *string                `json:"validator_code,omitempty"`     // Optional custom validator code
+	ValidatorLanguage string                 `json:"validator_language,omitempty"` // Language for validator (default: "python")
 	TestCases         []models.TestCase      `json:"test_cases"`
 	Tags              []string               `json:"tags"`
 }

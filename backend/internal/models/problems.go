@@ -67,6 +67,8 @@ type Problem struct {
 	TimeLimit         int             `json:"time_limit"`   // milliseconds
 	MemoryLimit       int             `json:"memory_limit"` // MB
 	Constraints       *string         `json:"constraints"`
+	ValidatorCode     *string         `json:"validator_code"`     // Optional custom validator code
+	ValidatorLanguage string          `json:"validator_language"` // Language for validator (default: "python")
 	Submissions       int             `json:"submissions"`
 	Accepted          int             `json:"accepted"`
 	Tags              []Tag           `json:"tags"`

@@ -72,24 +72,20 @@ func Receive(rabbitMQURL string, handler MessageHandler) error {
 
 // processMessage unmarshals the message and calls the handler
 func processMessage(msg amqp091.Delivery, handler MessageHandler) {
-	// Unmarshal the message body into a Submission
+
 	var submission types.Submission
 	if err := json.Unmarshal(msg.Body, &submission); err != nil {
 		log.Printf("Failed to unmarshal message: %v", err)
-		// Reject the message without requeue (it's malformed)
 		msg.Nack(false, false)
 		return
 	}
 
-	// Call the handler
 	if err := handler(&submission); err != nil {
 		log.Printf("Handler error for submission %s: %v", submission.SubmissionId, err)
-		// Reject and requeue the message for retry
 		msg.Nack(false, true)
 		return
 	}
 
-	// Acknowledge the message on success
 	if err := msg.Ack(false); err != nil {
 		log.Printf("Failed to ack message: %v", err)
 		return

@@ -8,6 +8,7 @@ import { Label } from '../components/ui/Label';
 import { Textarea } from '../components/ui/Textarea';
 import { FileUploadZone } from '../components/ui/FileUploadZone';
 import { ProblemDetailsForm } from '../components/problem-form/ProblemDetailsForm';
+import { ValidatorStep } from '../components/problem-form/ValidatorStep';
 import { useProblemForm } from '../hooks/useProblemForm';
 import { parseTestCaseFiles } from '../utils/testCaseParser';
 import { downloadSampleAsText } from '../utils/downloadSample';
@@ -23,6 +24,7 @@ export const AddProblemPage: React.FC = () => {
   const steps: { id: FormStep; title: string; description: string }[] = [
     { id: 'details', title: 'Problem Details', description: 'Basic information about the problem' },
     { id: 'test-cases', title: 'Test Cases', description: 'Add test cases manually or bulk upload' },
+    { id: 'validator', title: 'Custom Validator', description: 'Optional: Add custom output validator' },
     { id: 'tags', title: 'Tags', description: 'Categorize your problem' },
     { id: 'preview', title: 'Preview & Submit', description: 'Review and submit your problem' },
   ];
@@ -293,7 +295,16 @@ export const AddProblemPage: React.FC = () => {
             </div>
           )}
 
-          {/* Step 3: Tags */}
+          {/* Step 3: Validator (Optional) */}
+          {form.currentStep === 'validator' && (
+            <ValidatorStep
+              data={form.data}
+              errors={form.errors}
+              onUpdate={form.updateField}
+            />
+          )}
+
+          {/* Step 4: Tags */}
           {form.currentStep === 'tags' && (
             <div className="space-y-6">
               <div>
@@ -349,7 +360,7 @@ export const AddProblemPage: React.FC = () => {
             </div>
           )}
 
-          {/* Step 4: Preview */}
+          {/* Step 5: Preview */}
           {form.currentStep === 'preview' && (
             <div className="space-y-6">
               <div>
@@ -413,6 +424,40 @@ export const AddProblemPage: React.FC = () => {
                     </span>
                   )}
                 </p>
+              </Card>
+
+              {/* Validator Preview */}
+              <Card className="p-4 border-border">
+                <div className="flex items-start justify-between mb-3">
+                  <h3 className="font-semibold text-foreground">Custom Validator</h3>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => form.goToStep('validator')}
+                  >
+                    Edit
+                  </Button>
+                </div>
+                {form.data.validator_code?.trim() ? (
+                  <div className="space-y-2">
+                    <p className="text-sm text-foreground">
+                      <span className="font-medium text-muted-foreground">Language:</span>{' '}
+                      {form.data.validator_language}
+                    </p>
+                    <p className="text-sm text-foreground">
+                      <span className="font-medium text-muted-foreground">Code length:</span>{' '}
+                      {form.data.validator_code.length} characters
+                    </p>
+                    <div className="mt-2 p-2 bg-muted rounded text-xs text-muted-foreground">
+                      ✅ Custom validator configured
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    No custom validator - exact match validation will be used
+                  </p>
+                )}
               </Card>
 
               {/* Tags Preview */}

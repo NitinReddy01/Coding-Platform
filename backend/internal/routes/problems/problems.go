@@ -12,6 +12,7 @@ func ProblemRoutes() *chi.Mux {
 
 	r.With(middlewares.Paginate).Get("/", FecthProblems)
 	r.With(middlewares.RequireRole("admin", "author")).Post("/", AddProblem)
+	r.With(middlewares.RequireRole("admin", "author")).Post("/validate-validator", ValidateValidator)
 	r.Get("/languages", GetLanguages)
 	r.Get("/{title}", GetProblemByTitle)
 

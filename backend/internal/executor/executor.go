@@ -31,7 +31,8 @@ type ExecutionOutput struct {
 
 // Executor orchestrates code execution across multiple language runners.
 type Executor struct {
-	runners map[string]LanguageRunner
+	runners   map[string]LanguageRunner
+	validator OutputValidator
 }
 
 // NewExecutor creates a new Executor with the code runner supporting all languages.
@@ -47,10 +48,15 @@ func NewExecutor(workDir string, memLimitMB int) *Executor {
 	}
 
 	return &Executor{
-		runners: runners,
+		runners:   runners,
+		validator: nil, // Will be set per submission if custom validator is provided
 	}
 }
 
+// SetValidator sets a custom validator for this executor
+func (e *Executor) SetValidator(validator OutputValidator) {
+	e.validator = validator
+}
 
 // Execute runs a submission against all test cases and returns results.
 func (e *Executor) Execute(submission *types.Submission) (*models.ExecutionResult, error) {
@@ -59,7 +65,6 @@ func (e *Executor) Execute(submission *types.Submission) (*models.ExecutionResul
 		return nil, fmt.Errorf("unsupported language: %s", submission.Language)
 	}
 
-	// Add buffer for Docker container overhead
 	dockerOverheadBuffer := 10000
 	contextTimeout := timeLimitToDuration(submission.TimeLimit*len(submission.TestCases) + dockerOverheadBuffer)
 	ctx, cancel := context.WithTimeout(context.Background(), contextTimeout)
@@ -110,9 +115,7 @@ func (e *Executor) Execute(submission *types.Submission) (*models.ExecutionResul
 		}
 	}
 
-	// Check if there's a compilation error (all test cases fail with "Compilation error")
 	if len(result.TestResults) > 0 && result.TestResults[0].Error == "Compilation error" {
-		// Extract the actual compiler error from stderr
 		if len(outputs) > 0 && outputs[0].Stderr != "" {
 			result.CompileError = outputs[0].Stderr
 		}
@@ -161,12 +164,22 @@ func (e *Executor) processTestCaseOutput(testCase models.TestCase, output *Execu
 	testResult.ActualOutput = normalizeOutput(output.Stdout)
 	expectedOutput := normalizeOutput(testCase.ExpectedOutput)
 
-	if testResult.ActualOutput == expectedOutput {
-		testResult.Passed = true
+	var passed bool
+	var err error
+
+	if e.validator != nil {
+		ctx := context.Background()
+		passed, err = e.validator.Validate(ctx, testCase.Input, expectedOutput, testResult.ActualOutput)
+		if err != nil {
+			testResult.Passed = false
+			testResult.Error = fmt.Sprintf("Validator error: %s", err.Error())
+			return testResult
+		}
 	} else {
-		testResult.Passed = false
-		// No error set - wrong answer is not an error, frontend will show both outputs
+		passed = testResult.ActualOutput == expectedOutput
 	}
+
+	testResult.Passed = passed
 
 	return testResult
 }

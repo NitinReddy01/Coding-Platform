@@ -217,7 +217,7 @@ func (r *CodeRunner) ExecuteBatch(ctx context.Context, code string, testCases []
 		if strings.Contains(stderrStr, "Error response from daemon") ||
 			strings.Contains(stderrStr, "unable to find image") ||
 			strings.Contains(stderrStr, "Cannot connect to the Docker daemon") {
-			return nil, fmt.Errorf("Docker system error: %w", err)
+			return nil, fmt.Errorf("docker system error: %w", err)
 		}
 		if stderrStr != "" || stdoutStr != "" {
 			return nil, fmt.Errorf("wrapper script error: stdout=%s, stderr=%s, err=%w", stdoutStr, stderrStr, err)

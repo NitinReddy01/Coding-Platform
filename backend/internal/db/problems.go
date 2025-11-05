@@ -23,10 +23,16 @@ func AddProblem(ctx context.Context, problem types.ProblemInput, authorID string
 	problemQuery := `
 		INSERT INTO problems(
 			title, description, difficulty, author_id, status,
-			time_limit, memory_limit, constraints, input_description, output_description
-		) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+			time_limit, memory_limit, constraints, input_description, output_description,
+			validator_code, validator_language
+		) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 		RETURNING id
 	`
+
+	validatorLanguage := problem.ValidatorLanguage
+	if validatorLanguage == "" {
+		validatorLanguage = "python"
+	}
 
 	err = tx.QueryRow(ctx, problemQuery,
 		problem.Title,
@@ -39,6 +45,8 @@ func AddProblem(ctx context.Context, problem types.ProblemInput, authorID string
 		problem.Constraints,
 		problem.InputDescription,
 		problem.OutputDescription,
+		problem.ValidatorCode,
+		validatorLanguage,
 	).Scan(&problemID)
 
 	if err != nil {
@@ -171,12 +179,14 @@ func GetProblem(ctx context.Context, title string, sample bool) (*models.Problem
 		SELECT
 			id, title, description, difficulty,
 			created_at, updated_at, time_limit, memory_limit,
-			constraints, submissions, accepted, input_description, output_description
+			constraints, submissions, accepted, input_description, output_description,
+			validator_code, validator_language
 		FROM problems
 		WHERE title = $1 AND status = 'approved'
 	`
 
 	var constraints *string
+	var validatorCode *string
 	err := Pool.QueryRow(ctx, problemQuery, title).Scan(
 		&problem.ID,
 		&problem.Title,
@@ -191,12 +201,15 @@ func GetProblem(ctx context.Context, title string, sample bool) (*models.Problem
 		&problem.Accepted,
 		&problem.InputDescription,
 		&problem.OutputDescription,
+		&validatorCode,
+		&problem.ValidatorLanguage,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch problem: %w", err)
 	}
 
 	problem.Constraints = constraints
+	problem.ValidatorCode = validatorCode
 
 	// Fetch test cases
 	testCases, err := FetchTestCases(ctx, problem.ID, sample)
@@ -240,12 +253,14 @@ func GetProblemForAdmin(ctx context.Context, title string, sample bool) (*models
 		SELECT
 			id, title, description, difficulty, author_id, status,
 			reviewed_by, reviewed_at, created_at, updated_at,
-			time_limit, memory_limit, constraints, submissions, accepted, input_description, output_description
+			time_limit, memory_limit, constraints, submissions, accepted, input_description, output_description,
+			validator_code, validator_language
 		FROM problems
 		WHERE title = $1
 	`
 
 	var reviewedBy, reviewedAt, constraints *string
+	var validatorCode *string
 	err := Pool.QueryRow(ctx, problemQuery, title).Scan(
 		&problem.ID,
 		&problem.Title,
@@ -264,6 +279,8 @@ func GetProblemForAdmin(ctx context.Context, title string, sample bool) (*models
 		&problem.Accepted,
 		&problem.InputDescription,
 		&problem.OutputDescription,
+		&validatorCode,
+		&problem.ValidatorLanguage,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch problem: %w", err)
@@ -273,6 +290,7 @@ func GetProblemForAdmin(ctx context.Context, title string, sample bool) (*models
 	problem.ReviewedBy = reviewedBy
 	problem.ReviewedAt = reviewedAt
 	problem.Constraints = constraints
+	problem.ValidatorCode = validatorCode
 
 	// Fetch test cases
 	testCases, err := FetchTestCases(ctx, problem.ID, sample)
@@ -315,6 +333,16 @@ func GetProblemLimits(ctx context.Context, problemID string) (timeLimit int, mem
 		return 0, 0, fmt.Errorf("failed to fetch problem limits: %w", err)
 	}
 	return timeLimit, memoryLimit, nil
+}
+
+// GetProblemValidator fetches validator code and language for a problem by ID
+func GetProblemValidator(ctx context.Context, problemID string) (validatorCode *string, validatorLanguage string, err error) {
+	query := `SELECT validator_code, validator_language FROM problems WHERE id = $1`
+	err = Pool.QueryRow(ctx, query, problemID).Scan(&validatorCode, &validatorLanguage)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to fetch problem validator: %w", err)
+	}
+	return validatorCode, validatorLanguage, nil
 }
 
 func FecthProblems(ctx context.Context, offset uint16, limit uint8) (*types.PaginatedProblems, error) {

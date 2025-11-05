@@ -78,9 +78,14 @@ func HandleSubmission(w http.ResponseWriter, r *http.Request, rabbitMQURL string
 		return
 	}
 
+	validatorCode, validatorLanguage, err := db.GetProblemValidator(ctx, submissionReq.ProblemId)
+	if err != nil {
+		log.Printf("Warning: Error fetching validator for problem %s: %v", submissionReq.ProblemId, err)
+		validatorCode = nil
+	}
+
 	totalTestCases := len(testCases)
 
-	// Insert submission into database
 	submissionId, err := db.AddSubmission(
 		ctx,
 		userCtx.UserID,
@@ -97,17 +102,17 @@ func HandleSubmission(w http.ResponseWriter, r *http.Request, rabbitMQURL string
 		return
 	}
 
-	// Create submission payload for queue
 	queueSubmission := types.Submission{
-		SubmissionId: submissionId,
-		Code:         submissionReq.Code,
-		Language:     submissionReq.Language,
-		TestCases:    testCases,
-		TimeLimit:    timeLimit,
-		MemLimit:     memoryLimit,
+		SubmissionId:      submissionId,
+		Code:              submissionReq.Code,
+		Language:          submissionReq.Language,
+		TestCases:         testCases,
+		TimeLimit:         timeLimit,
+		MemLimit:          memoryLimit,
+		ValidatorCode:     validatorCode,
+		ValidatorLanguage: validatorLanguage,
 	}
 
-	// Send to RabbitMQ queue for async processing
 	err = queue.SendSubmission(ctx, queueSubmission, rabbitMQURL)
 	if err != nil {
 		log.Printf("Error queuing submission %s to RabbitMQ: %v", submissionId, err)
@@ -115,7 +120,6 @@ func HandleSubmission(w http.ResponseWriter, r *http.Request, rabbitMQURL string
 		return
 	}
 
-	// Return submission ID and timestamp for frontend polling
 	response := types.SubmissionResponse{
 		SubmissionId: submissionId,
 	}

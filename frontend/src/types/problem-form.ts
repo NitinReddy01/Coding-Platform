@@ -32,6 +32,10 @@ export interface ProblemFormData {
   /** Memory limit in MB */
   memory_limit: number;
   constraints?: string;
+  /** Optional custom validator code */
+  validator_code?: string;
+  /** Validator language (default: python) */
+  validator_language: string;
   test_cases: FormTestCase[];
   tags: string[];
 }
@@ -51,6 +55,8 @@ export interface ProblemInput {
   time_limit: number;
   memory_limit: number;
   constraints?: string;
+  validator_code?: string;
+  validator_language: string;
   test_cases: Array<{
     input: string;
     expected_output: string;
@@ -73,6 +79,8 @@ export interface FormErrors {
   time_limit?: string;
   memory_limit?: string;
   constraints?: string;
+  validator_code?: string;
+  validator_language?: string;
   test_cases?: string;
   tags?: string;
   /** Test case specific errors (indexed by test case index or tempId) */
@@ -86,7 +94,7 @@ export interface FormErrors {
 /**
  * Form step/tab in the multi-step form
  */
-export type FormStep = 'details' | 'test-cases' | 'tags' | 'preview';
+export type FormStep = 'details' | 'test-cases' | 'validator' | 'tags' | 'preview';
 
 /**
  * Form state management
@@ -158,6 +166,8 @@ export const INITIAL_FORM_DATA: ProblemFormData = {
   time_limit: 2000, // 2 seconds default
   memory_limit: 256, // 256 MB default
   constraints: '',
+  validator_code: undefined,
+  validator_language: 'python',
   test_cases: [],
   tags: [],
 };
