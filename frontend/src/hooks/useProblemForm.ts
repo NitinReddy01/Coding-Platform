@@ -1,11 +1,3 @@
-/**
- * Custom hook for managing problem creation form state
- *
- * Handles form data, validation, step navigation, and local storage persistence.
- *
- * @module hooks/useProblemForm
- */
-
 import { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -26,29 +18,11 @@ import { getErrorMessage } from '../utils/errorHandler';
 const STORAGE_KEY = 'problem-form-draft';
 const STEPS: FormStep[] = ['details', 'test-cases', 'validator', 'tags', 'preview'];
 
-/**
- * Problem form management hook
- *
- * @returns Form state and actions
- *
- * @example
- * ```tsx
- * const { data, errors, currentStep, updateField, nextStep, submitForm } = useProblemForm();
- *
- * <Input
- *   value={data.title}
- *   onChange={(e) => updateField('title', e.target.value)}
- *   error={!!errors.title}
- * />
- * ```
- */
+
 export const useProblemForm = (): ProblemFormState & ProblemFormActions => {
   const navigate = useNavigate();
   const axiosPrivate = useAxiosPrivate();
-
-  // Initialize form data
   const [data, setData] = useState<ProblemFormData>(INITIAL_FORM_DATA);
-
   const [currentStep, setCurrentStep] = useState<FormStep>('details');
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -66,9 +40,7 @@ export const useProblemForm = (): ProblemFormState & ProblemFormActions => {
     }
   }, [data, isDirty]);
 
-  /**
-   * Update a form field
-   */
+
   const updateField = useCallback(<K extends keyof ProblemFormData>(
     field: K,
     value: ProblemFormData[K]
@@ -79,9 +51,7 @@ export const useProblemForm = (): ProblemFormState & ProblemFormActions => {
     setErrors((prev) => ({ ...prev, [field]: undefined }));
   }, []);
 
-  /**
-   * Add a test case
-   */
+
   const addTestCase = useCallback((testCase: FormTestCase) => {
     setData((prev) => ({
       ...prev,
@@ -90,9 +60,6 @@ export const useProblemForm = (): ProblemFormState & ProblemFormActions => {
     setIsDirty(true);
   }, []);
 
-  /**
-   * Update a test case
-   */
   const updateTestCase = useCallback((index: number, updates: Partial<FormTestCase>) => {
     setData((prev) => ({
       ...prev,
@@ -103,9 +70,6 @@ export const useProblemForm = (): ProblemFormState & ProblemFormActions => {
     setIsDirty(true);
   }, []);
 
-  /**
-   * Remove a test case
-   */
   const removeTestCase = useCallback((index: number) => {
     setData((prev) => ({
       ...prev,
@@ -114,9 +78,6 @@ export const useProblemForm = (): ProblemFormState & ProblemFormActions => {
     setIsDirty(true);
   }, []);
 
-  /**
-   * Add a tag
-   */
   const addTag = useCallback((tag: string) => {
     const trimmedTag = tag.trim().toLowerCase();
     if (!trimmedTag) return;
@@ -138,9 +99,6 @@ export const useProblemForm = (): ProblemFormState & ProblemFormActions => {
     setIsDirty(true);
   }, [data.tags]);
 
-  /**
-   * Remove a tag
-   */
   const removeTag = useCallback((tag: string) => {
     setData((prev) => ({
       ...prev,
@@ -149,9 +107,6 @@ export const useProblemForm = (): ProblemFormState & ProblemFormActions => {
     setIsDirty(true);
   }, []);
 
-  /**
-   * Validate problem details step
-   */
   const validateDetails = (): FormErrors => {
     const newErrors: FormErrors = {};
 
@@ -194,9 +149,6 @@ export const useProblemForm = (): ProblemFormState & ProblemFormActions => {
     return newErrors;
   };
 
-  /**
-   * Validate test cases step
-   */
   const validateTestCases = (): FormErrors => {
     const newErrors: FormErrors = {};
 
@@ -231,18 +183,12 @@ export const useProblemForm = (): ProblemFormState & ProblemFormActions => {
     return newErrors;
   };
 
-  /**
-   * Validate tags step (completely optional)
-   */
   const validateTags = (): FormErrors => {
     const newErrors: FormErrors = {};
     // Tags are completely optional - no validation or suggestions
     return newErrors;
   };
 
-  /**
-   * Validate a specific step
-   */
   const validateStep = useCallback((step: FormStep): boolean => {
     let stepErrors: FormErrors = {};
 
@@ -270,9 +216,6 @@ export const useProblemForm = (): ProblemFormState & ProblemFormActions => {
     return Object.keys(stepErrors).length === 0;
   }, [data]);
 
-  /**
-   * Validate entire form
-   */
   const validateForm = useCallback((): boolean => {
     const allErrors = {
       ...validateDetails(),
@@ -284,9 +227,6 @@ export const useProblemForm = (): ProblemFormState & ProblemFormActions => {
     return Object.keys(allErrors).length === 0;
   }, [data]);
 
-  /**
-   * Navigate to next step
-   */
   const nextStep = useCallback(() => {
     if (validateStep(currentStep)) {
       const currentIndex = STEPS.indexOf(currentStep);
@@ -298,9 +238,6 @@ export const useProblemForm = (): ProblemFormState & ProblemFormActions => {
     }
   }, [currentStep, validateStep]);
 
-  /**
-   * Navigate to previous step
-   */
   const previousStep = useCallback(() => {
     const currentIndex = STEPS.indexOf(currentStep);
     if (currentIndex > 0) {
@@ -308,16 +245,10 @@ export const useProblemForm = (): ProblemFormState & ProblemFormActions => {
     }
   }, [currentStep]);
 
-  /**
-   * Navigate to a specific step
-   */
   const goToStep = useCallback((step: FormStep) => {
     setCurrentStep(step);
   }, []);
 
-  /**
-   * Submit the form
-   */
   const submitForm = useCallback(async () => {
     if (!validateForm()) {
       toast.error('Please fix all errors before submitting');
@@ -362,11 +293,9 @@ export const useProblemForm = (): ProblemFormState & ProblemFormActions => {
 
       toast.success('Problem created successfully!');
 
-      // Clear draft from localStorage
       localStorage.removeItem(STORAGE_KEY);
       setIsDirty(false);
 
-      // Navigate to problems list or the new problem page
       navigate('/problems');
     } catch (error) {
       console.error('Failed to create problem:', error);
@@ -377,9 +306,6 @@ export const useProblemForm = (): ProblemFormState & ProblemFormActions => {
     }
   }, [data, validateForm, axiosPrivate, navigate]);
 
-  /**
-   * Reset form to initial state
-   */
   const resetForm = useCallback(() => {
     setData(INITIAL_FORM_DATA);
     setCurrentStep('details');
@@ -388,9 +314,6 @@ export const useProblemForm = (): ProblemFormState & ProblemFormActions => {
     localStorage.removeItem(STORAGE_KEY);
   }, []);
 
-  /**
-   * Load draft from localStorage
-   */
   const loadDraft = useCallback(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -405,9 +328,6 @@ export const useProblemForm = (): ProblemFormState & ProblemFormActions => {
     }
   }, []);
 
-  /**
-   * Save draft to localStorage
-   */
   const saveDraft = useCallback(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));

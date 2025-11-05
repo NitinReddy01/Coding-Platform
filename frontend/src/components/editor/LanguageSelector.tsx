@@ -4,27 +4,16 @@ import { useAppDispatch, useAppSelector } from '../../store/store';
 import { setLanguage, setCode } from '../../store/slices/editorSlice';
 import { memo } from 'react';
 
-/**
- * Language selector component
- *
- * Reads available languages from Redux store (fetched in PersistLogin).
- * When language changes, updates both language and code (with default template).
- */
 function LanguageSelectorComponent() {
   const dispatch = useAppDispatch();
   const { language, languages } = useAppSelector((state) => state.editor);
 
-  /**
-   * Handle language change
-   * Updates both the language and sets the default code template
-   */
   const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newLanguageCode = e.target.value;
     const selectedLanguage = languages.find((lang) => lang.code === newLanguageCode);
 
     if (selectedLanguage) {
       dispatch(setLanguage(newLanguageCode));
-      // Set default code for the selected language from backend data
       dispatch(setCode(selectedLanguage.default_code));
     }
   };
@@ -46,5 +35,4 @@ function LanguageSelectorComponent() {
   );
 }
 
-// Memoize to prevent re-renders when parent component changes
 export const LanguageSelector = memo(LanguageSelectorComponent);

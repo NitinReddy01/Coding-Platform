@@ -1,49 +1,15 @@
-/**
- * Custom hook for fetching and managing problem data
- *
- * Automatically fetches a problem when the component mounts or when
- * the problemId changes. Manages loading and error states locally.
- *
- * @module hooks/useProblem
- */
-
 import { useEffect, useState } from 'react';
 import { fetchProblem } from '../api/problems';
 import { useAxiosPrivate } from './useAxiosPrivate';
 import { getErrorMessage } from '../utils/errorHandler';
 import type { Problem, ProblemMode } from '../types';
 
-/**
- * Hook for fetching and accessing problem data
- *
- * @param problemId - Unique identifier of the problem to fetch
- * @param useMock - Whether to use mock data instead of API (default: true)
- * @returns Object containing problem data, loading state, error, and refetch function
- *
- * @example
- * ```typescript
- * function ProblemPage() {
- *   const { problem, loading, error, refetch } = useProblem('123', false);
- *
- *   if (loading) return <div>Loading...</div>;
- *   if (error) return <div>Error: {error}</div>;
- *   if (!problem) return <div>Problem not found</div>;
- *
- *   return <div>{problem.title}</div>;
- * }
- * ```
- */
 export const useProblem = (problemId: string,mode:ProblemMode) => {
   const axiosPrivate = useAxiosPrivate();
   const [problem, setProblem] = useState<Problem | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  /**
-   * Loads problem data from API or mock
-   *
-   * @param id - Problem ID to fetch
-   */
   const loadProblem = async (id: string) => {
     setLoading(true);
     setError(null);
@@ -67,13 +33,9 @@ export const useProblem = (problemId: string,mode:ProblemMode) => {
   }, [problemId]);
 
   return {
-    /** The fetched problem data, null if not loaded */
     problem,
-    /** Whether the problem is currently being fetched */
     loading,
-    /** Error message if fetching failed, null otherwise */
     error,
-    /** Function to manually refetch the problem */
     refetch: () => loadProblem(problemId),
   };
 };

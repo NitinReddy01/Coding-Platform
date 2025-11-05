@@ -32,7 +32,6 @@ function AppRoutes() {
           <Route path="/problems/:title" element={<ProblemPage />} />
           <Route path="/submissions" element={<SubmissionsHistoryPage />} />
           <Route path="/profile/:username" element={<ProfilePage />} />
-          {/* Add more protected routes here in the future */}
         </Route>
 
         {/* Redirects */}

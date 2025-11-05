@@ -27,7 +27,6 @@ func main() {
 	defaultMemLimit := 256
 	exec := executor.NewExecutor(workDir, defaultMemLimit)
 
-	// Create API client for communicating with API server
 	apiClient := api_client.NewClient(cfg.APIBaseURL, cfg.WorkerAPIKey)
 
 	log.Println("Code execution worker starting...")

@@ -1,12 +1,3 @@
-/**
- * Problems Redux slice
- *
- * Manages state for problems list, filters, pagination, and sorting.
- * Integrates with backend API for fetching problems.
- *
- * @module store/slices/problemsSlice
- */
-
 import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit';
 import type { AxiosInstance } from 'axios';
 import type {
@@ -19,7 +10,6 @@ import { fetchProblemsList } from '../../api/problems';
 import type { RootState } from '../store';
 
 interface ProblemsState {
-  // Problems list
   problems: ProblemListItem[];
   total: number;
   currentPage: number;
@@ -65,12 +55,7 @@ const initialState: ProblemsState = {
   currentProblem: null,
 };
 
-/**
- * Async thunk to fetch problems from backend API
- * Automatically handles loading and error states
- *
- * @param axiosInstance - Authenticated axios instance from useAxiosPrivate hook
- */
+
 export const fetchProblems = createAsyncThunk(
   'problems/fetchProblems',
   async (axiosInstance: AxiosInstance, { getState }) => {
@@ -103,41 +88,27 @@ const problemsSlice = createSlice({
   name: 'problems',
   initialState,
   reducers: {
-    /**
-     * Set search filter
-     */
+
     setSearch: (state, action: PayloadAction<string>) => {
       state.filters.search = action.payload;
       state.currentPage = 1; // Reset to first page
     },
 
-    /**
-     * Set difficulty filter
-     */
     setDifficulty: (state, action: PayloadAction<'all' | 'easy' | 'medium' | 'hard'>) => {
       state.filters.difficulty = action.payload;
       state.currentPage = 1;
     },
 
-    /**
-     * Set status filter
-     */
     setStatus: (state, action: PayloadAction<'all' | 'solved' | 'attempted' | 'unsolved'>) => {
       state.filters.status = action.payload;
       state.currentPage = 1;
     },
 
-    /**
-     * Set tags filter
-     */
     setTags: (state, action: PayloadAction<string[]>) => {
       state.filters.tags = action.payload;
       state.currentPage = 1;
     },
 
-    /**
-     * Add a tag to filter
-     */
     addTag: (state, action: PayloadAction<string>) => {
       if (!state.filters.tags.includes(action.payload)) {
         state.filters.tags.push(action.payload);
@@ -145,32 +116,20 @@ const problemsSlice = createSlice({
       }
     },
 
-    /**
-     * Remove a tag from filter
-     */
     removeTag: (state, action: PayloadAction<string>) => {
       state.filters.tags = state.filters.tags.filter((tag) => tag !== action.payload);
       state.currentPage = 1;
     },
 
-    /**
-     * Clear all filters
-     */
     clearFilters: (state) => {
       state.filters = initialState.filters;
       state.currentPage = 1;
     },
 
-    /**
-     * Set sort field and order
-     */
     setSort: (state, action: PayloadAction<ProblemSort>) => {
       state.sort = action.payload;
     },
 
-    /**
-     * Toggle sort order for a field
-     */
     toggleSort: (state, action: PayloadAction<ProblemSort['field']>) => {
       if (state.sort.field === action.payload) {
         // Toggle order if same field
@@ -182,38 +141,23 @@ const problemsSlice = createSlice({
       }
     },
 
-    /**
-     * Set current page
-     */
     setPage: (state, action: PayloadAction<number>) => {
       state.currentPage = action.payload;
     },
 
-    /**
-     * Set page size
-     */
     setPageSize: (state, action: PayloadAction<number>) => {
       state.pageSize = action.payload;
       state.currentPage = 1; // Reset to first page
     },
 
-    /**
-     * Set current problem for detail view
-     */
     setCurrentProblem: (state, action: PayloadAction<ProblemListItem | null>) => {
       state.currentProblem = action.payload;
     },
 
-    /**
-     * Set loading state
-     */
     setLoading: (state, action: PayloadAction<boolean>) => {
       state.loading = action.payload;
     },
 
-    /**
-     * Set error
-     */
     setError: (state, action: PayloadAction<string | null>) => {
       state.error = action.payload;
       state.loading = false;
