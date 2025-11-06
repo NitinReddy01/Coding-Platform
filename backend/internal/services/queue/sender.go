@@ -10,7 +10,7 @@ import (
 )
 
 // SendSubmission sends a submission to the RabbitMQ queue for async processing
-func SendSubmission(ctx context.Context, submission types.Submission, rabbitMQURL string) error {
+func SendSubmission(ctx context.Context, submission types.SubmissionMessage, rabbitMQURL string) error {
 	conn, err := amqp091.Dial(rabbitMQURL)
 	if err != nil {
 		return fmt.Errorf("failed to connect to RabbitMQ: %w", err)

@@ -36,7 +36,7 @@ func main() {
 
 	ctx := context.Background()
 
-	handleSubmission := func(submission *types.Submission) error {
+	handleSubmission := func(submission *types.SubmissionMessage) error {
 		if submission.TimeLimit == 0 {
 			submission.TimeLimit = 5000
 		}

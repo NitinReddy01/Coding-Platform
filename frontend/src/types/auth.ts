@@ -66,6 +66,33 @@ export interface UserProfileResponse {
 }
 
 /**
+ * Registration response (after email verification implementation)
+ *
+ * Returns message and email instead of tokens (verification required first)
+ */
+export interface RegisterResponse {
+  message: string;
+  email: string;
+}
+
+/**
+ * Email verification response
+ *
+ * Returns message after verification or resend
+ */
+export interface VerificationResponse {
+  message: string;
+  email?: string;
+}
+
+/**
+ * Resend verification request payload
+ */
+export interface ResendVerificationRequest {
+  email: string;
+}
+
+/**
  * Auth state shape in Redux
  */
 export interface AuthState {

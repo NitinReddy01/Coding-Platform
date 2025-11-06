@@ -59,13 +59,14 @@ export const useAuth = (): UseAuthReturn => {
       try {
         dispatch(setLoading(true));
 
-        const { user, accessToken } = await authAPI.register(data);
+        const { message, email } = await authAPI.register(data);
 
-        // Update Redux with user and token
-        dispatch(setCredentials({ user, accessToken }));
+        // Registration successful - user needs to verify email
+        // No tokens returned, so don't set credentials
+        dispatch(setLoading(false));
 
-        // Navigate to problems list page
-        navigate('/problems');
+        // Navigate to verification sent page with email and message
+        navigate('/verify-email-sent', { state: { email, message } });
       } catch (error) {
         dispatch(setLoading(false));
         throw error; // Re-throw to let component handle error display

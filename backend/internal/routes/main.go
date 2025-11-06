@@ -27,7 +27,7 @@ func New(cfg *config.Config) *chi.Mux {
 				lib.JSON(w, http.StatusOK, map[string]string{"health": "ok"})
 			})
 
-			public.Mount("/auth", auth.AuthRoutes())
+			public.Mount("/auth", auth.AuthRoutes(cfg))
 		})
 
 		r.Group(func(private chi.Router) {

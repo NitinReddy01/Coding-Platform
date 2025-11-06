@@ -38,8 +38,8 @@ type Submission struct {
 	Type              string           `json:"type" db:"type"` // "run" or "submit"
 	RuntimeMs         *int             `json:"runtime_ms,omitempty" db:"runtime_ms"`
 	MemoryUsedMb      *float64         `json:"memory_used_mb,omitempty" db:"memory_used_mb"`
-	TestCasesPassed   int              `json:"test_cases_passed" db:"test_cases_passed"`
-	TestCasesTotal    int              `json:"test_cases_total" db:"test_cases_total"`
+	TestCasesPassed   *int             `json:"test_cases_passed,omitempty" db:"test_cases_passed"`
+	TestCasesTotal    *int             `json:"test_cases_total,omitempty" db:"test_cases_total"`
 	ErrorMessage      *string          `json:"error_message,omitempty" db:"error_message"`
 	SampleTestResults []TestCaseResult `json:"sample_test_results,omitempty" db:"sample_test_results"`
 	SubmittedAt       time.Time        `json:"submitted_at" db:"submitted_at"`
