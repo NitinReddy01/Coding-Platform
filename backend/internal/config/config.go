@@ -29,12 +29,14 @@ type Config struct {
 }
 
 func Load() *Config {
-	err := godotenv.Load("./.env")
-	if err != nil {
-		log.Fatal("Missing .env file")
+	if os.Getenv("RENDER") == "" && os.Getenv("ENV") != "production" {
+		if err := godotenv.Load(".env"); err != nil {
+			log.Println("⚠️  No .env file found — using system environment variables")
+		}
 	}
+
 	portString := getEnv("PORT", "4000")
-	_, err = strconv.Atoi(portString)
+	_, err := strconv.Atoi(portString)
 	if err != nil {
 		log.Fatalf("Invalid port: %s", portString)
 	}
