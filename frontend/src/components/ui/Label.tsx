@@ -7,7 +7,7 @@
  * @module components/ui/Label
  */
 
-import { LabelHTMLAttributes } from 'react';
+import { type LabelHTMLAttributes } from 'react';
 
 export interface LabelProps extends LabelHTMLAttributes<HTMLLabelElement> {
   /** Whether the field is required (adds asterisk) */

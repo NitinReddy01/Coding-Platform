@@ -17,8 +17,7 @@ export function Tooltip({
   className,
 }: TooltipProps) {
   const [isVisible, setIsVisible] = useState(false);
-  const [coords, setCoords] = useState({ x: 0, y: 0 });
-  const timeoutRef = useRef<NodeJS.Timeout>();
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const triggerRef = useRef<HTMLDivElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
 
@@ -32,14 +31,7 @@ export function Tooltip({
 
   const showTooltip = () => {
     timeoutRef.current = setTimeout(() => {
-      if (triggerRef.current) {
-        const rect = triggerRef.current.getBoundingClientRect();
-        setCoords({
-          x: rect.left + rect.width / 2,
-          y: rect.top,
-        });
-        setIsVisible(true);
-      }
+      setIsVisible(true);
     }, delay);
   };
 

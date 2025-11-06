@@ -1,3 +1,5 @@
+export type SolveStatus = 'solved' | 'attempted' | 'unsolved';
+
 export interface ProblemListItem {
   id: string;
   title: string;
@@ -5,6 +7,9 @@ export interface ProblemListItem {
   acceptance_rate: number;
   submissions: number;
   accepted: number;
+  description?: string;
+  tags?: Array<{ id: string; name: string }>;
+  solve_status?: SolveStatus;
 }
 
 export interface ProblemFilters {

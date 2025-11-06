@@ -26,6 +26,8 @@ You can return the answer in any order.
 **Input:** nums = [3,3], target = 6
 **Output:** [0,1]
 `,
+  input_description: 'Line 1: Array of integers nums\nLine 2: Integer target',
+  output_description: 'Array of two integers representing indices',
   difficulty: 'easy',
   constraints: `- 2 <= nums.length <= 10^4
 - -10^9 <= nums[i] <= 10^9
@@ -65,6 +67,8 @@ export const mockProblems: Problem[] = [
     id: '2',
     title: 'Valid Parentheses',
     description: 'Given a string s containing just the characters \'(\', \')\', \'{\', \'}\', \'[\' and \']\', determine if the input string is valid.',
+    input_description: 'A string containing only parentheses characters',
+    output_description: 'Boolean indicating if the string is valid',
     difficulty: 'easy',
     time_limit: 1000,
     memory_limit: 64,

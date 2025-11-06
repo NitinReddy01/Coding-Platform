@@ -7,7 +7,7 @@
  * @module components/ui/Textarea
  */
 
-import { forwardRef, TextareaHTMLAttributes } from 'react';
+import { forwardRef, type TextareaHTMLAttributes } from 'react';
 
 export interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
   /** Whether the textarea has an error (applies error styling) */

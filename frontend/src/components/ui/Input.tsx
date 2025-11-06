@@ -7,7 +7,7 @@
  * @module components/ui/Input
  */
 
-import { forwardRef, InputHTMLAttributes } from 'react';
+import { forwardRef, type InputHTMLAttributes,  } from 'react';
 
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   /** Whether the input has an error (applies error styling) */

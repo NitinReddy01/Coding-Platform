@@ -23,6 +23,7 @@ export function SubmissionStatusBanner({
       description: 'Your submission is waiting to be processed...',
       bgClass: 'bg-muted/30 border-primary/30',
       textClass: 'text-foreground',
+      emoji: undefined,
     },
     running: {
       icon: <Loader2 className="w-6 h-6 animate-spin text-primary" />,
@@ -30,6 +31,7 @@ export function SubmissionStatusBanner({
       description: 'Executing your code against test cases...',
       bgClass: 'bg-primary/10 border-primary/30',
       textClass: 'text-primary',
+      emoji: undefined,
     },
     accepted: {
       icon: <Check className="w-6 h-6 text-success" />,
@@ -45,6 +47,7 @@ export function SubmissionStatusBanner({
       description: 'Some test cases failed. Review your logic.',
       bgClass: 'bg-destructive/10 border-destructive/30',
       textClass: 'text-destructive',
+      emoji: undefined,
     },
     time_limit_exceeded: {
       icon: <Clock className="w-6 h-6 text-warning" />,
@@ -52,6 +55,7 @@ export function SubmissionStatusBanner({
       description: 'Your code took too long to execute.',
       bgClass: 'bg-warning/10 border-warning/30',
       textClass: 'text-warning',
+      emoji: undefined,
     },
     memory_limit_exceeded: {
       icon: <MemoryStick className="w-6 h-6 text-warning" />,
@@ -59,6 +63,7 @@ export function SubmissionStatusBanner({
       description: 'Your code used too much memory.',
       bgClass: 'bg-warning/10 border-warning/30',
       textClass: 'text-warning',
+      emoji: undefined,
     },
     runtime_error: {
       icon: <AlertCircle className="w-6 h-6 text-destructive" />,
@@ -66,6 +71,7 @@ export function SubmissionStatusBanner({
       description: errorMessage || 'Your code encountered an error during execution.',
       bgClass: 'bg-destructive/10 border-destructive/30',
       textClass: 'text-destructive',
+      emoji: undefined,
     },
     compilation_error: {
       icon: <AlertCircle className="w-6 h-6 text-destructive" />,
@@ -73,6 +79,7 @@ export function SubmissionStatusBanner({
       description: errorMessage || 'Your code failed to compile.',
       bgClass: 'bg-destructive/10 border-destructive/30',
       textClass: 'text-destructive',
+      emoji: undefined,
     },
   };
 

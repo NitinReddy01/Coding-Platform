@@ -38,7 +38,7 @@ const userSlice = createSlice({
   name: 'user',
   initialState,
   reducers: {
-    fetchUserProfile: (state, action: PayloadAction<string | undefined>) => {
+    fetchUserProfile: (state, _action: PayloadAction<string | undefined>) => {
       state.loading = true;
       state.error = null;
 

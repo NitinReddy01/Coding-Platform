@@ -21,10 +21,13 @@ export interface ExecutionResult {
   passed: boolean;
   input: string;
   actual_output: string;
+  output: string; // Alias for actual_output, used by components
   expected_output: string;
   error?: string;
   execution_time?: number;
   memory_used?: number;
+  is_timeout?: boolean;
+  is_oom?: boolean; // Out of memory flag
 }
 
 export interface SubmissionResponse {

@@ -39,20 +39,10 @@ const createProblem = (
   title,
   description: `<p>This is a ${difficulty} level problem about ${tagKeys.join(', ')}.</p>`,
   difficulty,
-  constraints: '1 ≤ n ≤ 10^5',
-  time_limit: 2000,
-  memory_limit: 128,
   tags: tagKeys.map((key) => TAGS[key as keyof typeof TAGS]),
   submissions,
   accepted,
   acceptance_rate: Math.round((accepted / submissions) * 100),
-  author_id: 'author-1',
-  status: 'approved',
-  created_at: new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1).toISOString(),
-  updated_at: new Date().toISOString(),
-  sample_test_cases: [
-    { input: 'sample input', expected_output: 'sample output' },
-  ],
   solve_status: solveStatus,
 });
 
@@ -133,7 +123,7 @@ export const MOCK_PROBLEMS: ProblemListItem[] = [
 export const getAllTags = () => {
   const tagMap = new Map<string, { id: string; name: string }>();
   MOCK_PROBLEMS.forEach((problem) => {
-    problem.tags.forEach((tag) => {
+    problem.tags?.forEach((tag: { id: string; name: string }) => {
       tagMap.set(tag.id, tag);
     });
   });
@@ -162,7 +152,7 @@ export const filterProblems = (
       (p) =>
         p.title.toLowerCase().includes(searchLower) ||
         p.id === searchLower ||
-        p.tags.some((t) => t.name.toLowerCase().includes(searchLower))
+        p.tags?.some((t: { id: string; name: string }) => t.name.toLowerCase().includes(searchLower))
     );
   }
 
@@ -179,7 +169,7 @@ export const filterProblems = (
   // Filter by tags
   if (tags.length > 0) {
     filtered = filtered.filter((p) =>
-      tags.every((tagId) => p.tags.some((t) => t.id === tagId))
+      tags.every((tagId) => p.tags?.some((t: { id: string; name: string }) => t.id === tagId))
     );
   }
 
