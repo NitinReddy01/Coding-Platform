@@ -431,7 +431,7 @@ func setRefreshTokenCookie(w http.ResponseWriter, token string) {
 		Path:     "/api/auth",
 		MaxAge:   7 * 24 * 60 * 60, // 7 days
 		HttpOnly: true,
-		Secure:   false, // Set to true in production with HTTPS
+		Secure:   true, // Set to true in production with HTTPS
 		SameSite: http.SameSiteLaxMode,
 	}
 	http.SetCookie(w, cookie)
