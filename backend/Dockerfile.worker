@@ -1,0 +1,37 @@
+# Multi-stage build for Worker
+FROM golang:1.24-alpine AS builder
+
+WORKDIR /app
+
+# Install build dependencies
+RUN apk add --no-cache git
+
+# Copy go mod files
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copy source code
+COPY . .
+
+# Build the Worker binary
+RUN CGO_ENABLED=0 GOOS=linux go build -o worker ./cmd/worker
+
+# Final stage - Docker-in-Docker for code execution
+FROM docker:27-dind-alpine3.19
+
+WORKDIR /app
+
+# Install ca-certificates for HTTPS requests
+RUN apk --no-cache add ca-certificates
+
+# Copy binary from builder
+COPY --from=builder /app/worker .
+
+# Copy dockerfiles for building executor images
+COPY --from=builder /app/dockerfiles ./dockerfiles
+
+# Note: Worker requires Docker socket mount or DinD to execute user code
+# For Render deployment, this may require privileged mode or Docker socket access
+
+# Run the Worker
+CMD ["./worker"]

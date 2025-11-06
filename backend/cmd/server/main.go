@@ -11,6 +11,12 @@ import (
 
 func main() {
 	config := config.Load()
+
+	// Run database migrations automatically
+	if err := db.RunMigrations(config.DB_URL); err != nil {
+		log.Fatalf("Failed to run migrations: %s", err)
+	}
+
 	router := routes.New(config)
 	lib.InitJWT(config.JWTAccessSecret, config.JWTRefreshSecret, config.AccessTokenExpiry, config.RefreshTokenExpiry)
 

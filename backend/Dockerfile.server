@@ -1,0 +1,37 @@
+# Multi-stage build for API server
+FROM golang:1.24-alpine AS builder
+
+WORKDIR /app
+
+# Install build dependencies
+RUN apk add --no-cache git
+
+# Copy go mod files
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copy source code
+COPY . .
+
+# Copy migrations to internal/db/ for embed directive
+RUN cp -r db/migrations internal/db/migrations
+
+# Build the API server binary
+RUN CGO_ENABLED=0 GOOS=linux go build -o server ./cmd/server
+
+# Final stage - minimal runtime image
+FROM alpine:latest
+
+WORKDIR /app
+
+# Install ca-certificates for HTTPS requests
+RUN apk --no-cache add ca-certificates
+
+# Copy binary from builder (migrations are embedded inside)
+COPY --from=builder /app/server .
+
+# Expose port (Render will set PORT env var)
+EXPOSE 4000
+
+# Run the API server
+CMD ["./server"]
