@@ -5,7 +5,7 @@
 INSERT INTO users (id, email, name, is_active, created_at)
 VALUES (
     gen_random_uuid(),
-    'nitingogula@gmail.com',
+    'nitin@gmail.com',
     'Admin User',
     true,
     now()

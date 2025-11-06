@@ -25,6 +25,7 @@ type Config struct {
 	SMTPPassword       string
 	WorkerAPIKey       string
 	APIBaseURL         string
+	FrontendURL        string
 }
 
 func Load() *Config {
@@ -105,6 +106,7 @@ func Load() *Config {
 	}
 
 	apiBaseURL := getEnv("API_BASE_URL", "http://localhost:4000")
+	frontendURL := getEnv("FRONTEND_URL", "http://localhost:5173")
 
 	config := &Config{
 		Port:               portString,
@@ -121,6 +123,7 @@ func Load() *Config {
 		SMTPPassword:       smtpPassword,
 		WorkerAPIKey:       workerAPIKey,
 		APIBaseURL:         apiBaseURL,
+		FrontendURL:        frontendURL,
 	}
 	return config
 }

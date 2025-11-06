@@ -11,6 +11,8 @@ import { ProfilePage } from './pages/ProfilePage';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { GoogleCallbackPage } from './pages/GoogleCallbackPage';
+import VerificationSentPage from './pages/VerificationSentPage';
+import VerifyEmailPage from './pages/VerifyEmailPage';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { PersistLogin } from './components/auth/PersistLogin';
 import './index.css';
@@ -22,6 +24,8 @@ function AppRoutes() {
         {/* Public routes */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/verify-email-sent" element={<VerificationSentPage />} />
+        <Route path="/verify-email" element={<VerifyEmailPage />} />
         <Route path="/auth/google/callback" element={<GoogleCallbackPage />} />
 
         {/* Protected routes */}

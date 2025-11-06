@@ -21,7 +21,7 @@ export const RegisterPage: React.FC = () => {
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/problems/1');
+      navigate('/');
     }
   }, [isAuthenticated, navigate]);
 
@@ -138,7 +138,8 @@ export const RegisterPage: React.FC = () => {
           </Button>
         </form>
 
-        <div className="mt-6">
+        {/* Google OAuth - will be enabled when OAuth is implemented */}
+        {/* <div className="mt-6">
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-border"></div>
@@ -180,7 +181,7 @@ export const RegisterPage: React.FC = () => {
             </svg>
             Sign up with Google
           </Button>
-        </div>
+        </div> */}
 
         <p className="mt-8 text-center text-sm text-muted-foreground">
           Already have an account?{' '}

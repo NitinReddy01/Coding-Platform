@@ -11,7 +11,15 @@ import sys
 import signal
 import traceback
 import tracemalloc
+import threading
 from io import StringIO
+
+try:
+    import psutil
+    PSUTIL_AVAILABLE = True
+except ImportError:
+    PSUTIL_AVAILABLE = False
+    print("WARNING: psutil not available, memory tracking for subprocesses will be disabled", file=sys.stderr)
 
 # Language configuration
 LANGUAGE_CONFIG = {
@@ -200,6 +208,55 @@ def execute_python_in_process(code, test_cases, time_limit_ms):
     return results
 
 
+def track_memory_usage(pid, peak_memory_kb, stop_event):
+    """
+    Background thread to track peak memory usage of a process.
+    Updates peak_memory_kb list with maximum RSS memory observed.
+    """
+    if not PSUTIL_AVAILABLE:
+        return
+
+    try:
+        process = psutil.Process(pid)
+        max_memory = 0
+
+        while not stop_event.is_set():
+            try:
+                # Get memory info (RSS = Resident Set Size)
+                mem_info = process.memory_info()
+                current_memory = mem_info.rss  # Memory in bytes
+
+                # Track peak memory
+                if current_memory > max_memory:
+                    max_memory = current_memory
+
+                # Also track child processes
+                try:
+                    children = process.children(recursive=True)
+                    for child in children:
+                        try:
+                            child_mem = child.memory_info().rss
+                            if child_mem > max_memory:
+                                max_memory = child_mem
+                        except (psutil.NoSuchProcess, psutil.AccessDenied):
+                            pass
+                except (psutil.NoSuchProcess, psutil.AccessDenied):
+                    pass
+
+                # Poll every 10ms
+                time.sleep(0.01)
+
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
+                # Process terminated or access denied
+                break
+
+        # Convert bytes to KB and update result
+        peak_memory_kb[0] = max_memory // 1024
+
+    except Exception as e:
+        print(f"WARNING: Memory tracking failed: {e}", file=sys.stderr)
+
+
 def execute_subprocess(language, test_cases, time_limit_ms):
     """Execute compiled/interpreted code as subprocess for each test case."""
     lang_config = LANGUAGE_CONFIG[language]
@@ -233,34 +290,68 @@ def execute_subprocess(language, test_cases, time_limit_ms):
         try:
             start_time = time.perf_counter()
 
-            proc = subprocess.run(
+            # Start subprocess with Popen for memory tracking
+            proc = subprocess.Popen(
                 run_cmd,
-                input=tc['input'],
-                capture_output=True,
-                text=True,
-                timeout=time_limit_ms / 1000.0
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True
             )
 
-            end_time = time.perf_counter()
+            # Start memory tracking thread if psutil is available
+            peak_memory_kb = [0]
+            stop_event = threading.Event()
+            memory_thread = None
 
-            result['stdout'] = proc.stdout
-            result['stderr'] = proc.stderr
-            result['exit_code'] = proc.returncode
-            result['time_ms'] = int((end_time - start_time) * 1000)
+            if PSUTIL_AVAILABLE:
+                memory_thread = threading.Thread(
+                    target=track_memory_usage,
+                    args=(proc.pid, peak_memory_kb, stop_event)
+                )
+                memory_thread.daemon = True
+                memory_thread.start()
 
-            # Memory tracking for subprocess is complex, placeholder for now
-            result['memory_kb'] = 0
+            # Communicate with timeout
+            try:
+                stdout, stderr = proc.communicate(
+                    input=tc['input'],
+                    timeout=time_limit_ms / 1000.0
+                )
 
-            if proc.returncode != 0:
-                # Include stderr in error for better debugging
-                error_msg = 'Runtime error'
-                if proc.stderr:
-                    error_msg = f'Runtime error: {proc.stderr.strip()}'
-                result['error'] = error_msg
+                # Stop memory tracking
+                stop_event.set()
+                if memory_thread:
+                    memory_thread.join(timeout=0.5)
 
-        except subprocess.TimeoutExpired:
-            result['timed_out'] = True
-            result['error'] = f'Time limit exceeded ({time_limit_ms}ms)'
+                end_time = time.perf_counter()
+
+                result['stdout'] = stdout
+                result['stderr'] = stderr
+                result['exit_code'] = proc.returncode
+                result['time_ms'] = int((end_time - start_time) * 1000)
+                result['memory_kb'] = peak_memory_kb[0]
+
+                if proc.returncode != 0:
+                    # Include stderr in error for better debugging
+                    error_msg = 'Runtime error'
+                    if stderr:
+                        error_msg = f'Runtime error: {stderr.strip()}'
+                    result['error'] = error_msg
+
+            except subprocess.TimeoutExpired:
+                # Kill the process
+                proc.kill()
+                proc.wait()
+
+                # Stop memory tracking
+                stop_event.set()
+                if memory_thread:
+                    memory_thread.join(timeout=0.5)
+
+                result['timed_out'] = True
+                result['error'] = f'Time limit exceeded ({time_limit_ms}ms)'
+                result['memory_kb'] = peak_memory_kb[0]  # Still record memory used before timeout
 
         except Exception as e:
             result['exit_code'] = 1

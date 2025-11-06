@@ -102,7 +102,7 @@ func HandleSubmission(w http.ResponseWriter, r *http.Request, rabbitMQURL string
 		return
 	}
 
-	queueSubmission := types.Submission{
+	queueSubmission := types.SubmissionMessage{
 		SubmissionId:      submissionId,
 		Code:              submissionReq.Code,
 		Language:          submissionReq.Language,
@@ -158,8 +158,8 @@ func GetSubmissionStatus(w http.ResponseWriter, r *http.Request) {
 	var testCasesPassed, testCasesTotal *int
 	var sampleTestResults []models.TestCaseResult
 	if submission.Status != models.StatusPending && submission.Status != models.StatusRunning {
-		testCasesPassed = &submission.TestCasesPassed
-		testCasesTotal = &submission.TestCasesTotal
+		testCasesPassed = submission.TestCasesPassed
+		testCasesTotal = submission.TestCasesTotal
 		sampleTestResults = submission.SampleTestResults
 	}
 

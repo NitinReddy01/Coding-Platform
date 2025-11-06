@@ -69,32 +69,6 @@ func GetProblemByTitle(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// ValidateValidatorRequest represents the request body for validator testing
-type ValidateValidatorRequest struct {
-	ValidatorCode     string            `json:"validator_code"`
-	ValidatorLanguage string            `json:"validator_language"`
-	TestCases         []models.TestCase `json:"test_cases"`
-}
-
-// ValidatorTestResult represents the result of testing a validator against a test case
-type ValidatorTestResult struct {
-	TestCaseID  string `json:"test_case_id"`
-	Input       string `json:"input"`
-	Expected    string `json:"expected"`
-	Passed      bool   `json:"passed"`
-	Error       string `json:"error,omitempty"`
-	DebugOutput string `json:"debug_output,omitempty"` // stderr from validator
-	IsSample    bool   `json:"is_sample"`               // whether this is a sample test case
-	OrderIndex  int    `json:"order_index"`
-}
-
-// ValidateValidatorResponse represents the response for validator testing
-type ValidateValidatorResponse struct {
-	Valid   bool                  `json:"valid"`
-	Results []ValidatorTestResult `json:"results"`
-	Message string                `json:"message,omitempty"`
-}
-
 // ValidateValidator tests a custom validator against sample test cases
 func ValidateValidator(w http.ResponseWriter, r *http.Request) {
 	// Get authenticated user context
@@ -110,7 +84,7 @@ func ValidateValidator(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var req ValidateValidatorRequest
+	var req types.ValidateValidatorRequest
 	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields()
 	err := decoder.Decode(&req)
@@ -140,11 +114,11 @@ func ValidateValidator(w http.ResponseWriter, r *http.Request) {
 	validator := executor.NewCustomCodeValidator(req.ValidatorCode, req.ValidatorLanguage)
 
 	// Test validator against ALL test cases (samples + hidden) to catch edge cases
-	results := make([]ValidatorTestResult, 0, len(req.TestCases))
+	results := make([]types.ValidatorTestResult, 0, len(req.TestCases))
 	allPassed := true
 
 	for _, tc := range req.TestCases {
-		result := ValidatorTestResult{
+		result := types.ValidatorTestResult{
 			TestCaseID: tc.ID,
 			Input:      tc.Input,
 			Expected:   tc.ExpectedOutput,
@@ -180,7 +154,7 @@ func ValidateValidator(w http.ResponseWriter, r *http.Request) {
 		results = append(results, result)
 	}
 
-	response := ValidateValidatorResponse{
+	response := types.ValidateValidatorResponse{
 		Valid:   allPassed,
 		Results: results,
 	}

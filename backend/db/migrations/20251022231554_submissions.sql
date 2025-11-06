@@ -1,7 +1,7 @@
 -- +goose Up
 -- +goose StatementBegin
 CREATE TYPE submission_status AS ENUM ('pending', 'running', 'accepted', 'wrong_answer', 'time_limit_exceeded', 'memory_limit_exceeded', 'runtime_error', 'compilation_error');
-CREATE TYPE submission_type as ENUM ('run', 'submit');
+CREATE TYPE submission_type AS ENUM ('run', 'submit');
 
 CREATE TABLE IF NOT EXISTS submissions(
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -30,4 +30,7 @@ CREATE INDEX idx_submissions_user_submitted ON submissions(user_id, submitted_at
 DROP INDEX IF EXISTS idx_submissions_user_problem_status, idx_submissions_status_submitted, idx_submissions_user_submitted;
 
 DROP TABLE IF EXISTS submissions;
+
+DROP TYPE submission_status;
+DROP TYPE submission_type;
 -- +goose StatementEnd

@@ -1,21 +1,45 @@
 import { useState, useEffect, type FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { Input } from '../components/ui/Input';
 import { Label } from '../components/ui/Label';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
 import { getErrorMessage } from '../utils/errorHandler';
+import { CheckCircle } from 'lucide-react';
 
+interface LocationState {
+  message?: string;
+}
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login, isAuthenticated, loading, persist, setPersist } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(persist);
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+
+  // Read success message from navigation state
+  useEffect(() => {
+    const state = location.state as LocationState | null;
+    if (state?.message) {
+      setSuccessMessage(state.message);
+
+      // Clear the message from navigation state
+      window.history.replaceState({}, document.title);
+
+      // Auto-dismiss after 8 seconds
+      const timer = setTimeout(() => {
+        setSuccessMessage('');
+      }, 8000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [location]);
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -27,6 +51,7 @@ export const LoginPage: React.FC = () => {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuccessMessage(''); // Clear success message when submitting
 
     if (!email || !password) {
       setError('Please fill in all fields');
@@ -55,6 +80,13 @@ export const LoginPage: React.FC = () => {
             Sign in to continue coding
           </p>
         </div>
+
+        {successMessage && (
+          <div className="mb-6 p-4 rounded-lg bg-success/10 border border-success text-success text-sm flex items-center gap-2">
+            <CheckCircle className="h-4 w-4 flex-shrink-0" />
+            <span>{successMessage}</span>
+          </div>
+        )}
 
         {error && (
           <div className="mb-6 p-4 rounded-lg bg-destructive/10 border border-destructive text-destructive text-sm">
@@ -119,7 +151,8 @@ export const LoginPage: React.FC = () => {
           </Button>
         </form>
 
-        <div className="mt-6">
+        {/* Google OAuth - will be enabled when OAuth is implemented */}
+        {/* <div className="mt-6">
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-border"></div>
@@ -161,7 +194,7 @@ export const LoginPage: React.FC = () => {
             </svg>
             Sign in with Google
           </Button>
-        </div>
+        </div> */}
 
         <p className="mt-8 text-center text-sm text-muted-foreground">
           Don't have an account?{' '}

@@ -25,7 +25,9 @@ type SubmissionRequest struct {
 	Type      SubmissionType `json:"type"`
 }
 
-type Submission struct {
+// SubmissionMessage represents a submission task sent to the worker queue (RabbitMQ)
+// This is different from models.Submission which is the database entity
+type SubmissionMessage struct {
 	SubmissionId      string            `json:"submission_id"`
 	Code              string            `json:"code"`
 	Language          string            `json:"language"`

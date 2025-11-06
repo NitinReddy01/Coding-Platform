@@ -59,7 +59,7 @@ func (e *Executor) SetValidator(validator OutputValidator) {
 }
 
 // Execute runs a submission against all test cases and returns results.
-func (e *Executor) Execute(submission *types.Submission) (*models.ExecutionResult, error) {
+func (e *Executor) Execute(submission *types.SubmissionMessage) (*models.ExecutionResult, error) {
 	runner, ok := e.runners[submission.Language]
 	if !ok {
 		return nil, fmt.Errorf("unsupported language: %s", submission.Language)

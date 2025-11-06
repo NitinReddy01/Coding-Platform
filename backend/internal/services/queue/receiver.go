@@ -9,7 +9,7 @@ import (
 	"github.com/rabbitmq/amqp091-go"
 )
 
-type MessageHandler func(*types.Submission) error
+type MessageHandler func(*types.SubmissionMessage) error
 
 func Receive(rabbitMQURL string, handler MessageHandler) error {
 	// Connect to RabbitMQ
@@ -73,7 +73,7 @@ func Receive(rabbitMQURL string, handler MessageHandler) error {
 // processMessage unmarshals the message and calls the handler
 func processMessage(msg amqp091.Delivery, handler MessageHandler) {
 
-	var submission types.Submission
+	var submission types.SubmissionMessage
 	if err := json.Unmarshal(msg.Body, &submission); err != nil {
 		log.Printf("Failed to unmarshal message: %v", err)
 		msg.Nack(false, false)

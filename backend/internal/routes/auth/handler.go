@@ -1,11 +1,14 @@
 package auth
 
 import (
+	"app/internal/config"
 	"app/internal/db"
 	"app/internal/lib"
+	"app/internal/lib/types"
 	"app/internal/middlewares"
-	"app/internal/models"
+	"app/internal/services"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"regexp"
@@ -16,15 +19,13 @@ import (
 // Email validation regex
 var emailRegex = regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
 
-// HandleRegister handles user registration with email and password
-func HandleRegister(w http.ResponseWriter, r *http.Request) {
-	var req models.RegisterRequest
+func HandleRegister(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
+	var req types.RegisterRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		lib.JSONError(w, http.StatusBadRequest, "Invalid request body")
 		return
 	}
 
-	// Validate inputs
 	req.Name = strings.TrimSpace(req.Name)
 	req.Email = strings.TrimSpace(strings.ToLower(req.Email))
 
@@ -47,15 +48,6 @@ func HandleRegister(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 
-	// TODO: Email verification will be implemented in the future
-	// For now, users can register without email verification
-	// When implemented:
-	// 1. Generate verification token
-	// 2. Send verification email
-	// 3. Set email_verified = false in users table
-	// 4. Add verification endpoint to validate token
-
-	// Check if email already exists
 	exists, err := db.EmailExists(ctx, req.Email)
 	if err != nil {
 		log.Printf("Error checking email existence: %v", err)
@@ -67,7 +59,6 @@ func HandleRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Hash password
 	passwordHash, err := lib.HashPassword(req.Password)
 	if err != nil {
 		log.Printf("Error hashing password: %v", err)
@@ -75,62 +66,57 @@ func HandleRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Create user
-	user, err := db.CreateUser(ctx, req.Name, req.Email, passwordHash)
+	user, err := db.CreateUser(ctx, req.Name, req.Email, passwordHash, "user", false)
 	if err != nil {
 		log.Printf("Error creating user: %v", err)
 		lib.JSONError(w, http.StatusInternalServerError, "Failed to create user")
 		return
 	}
 
-	// Assign default 'user' role to new user
-	err = db.AssignRoleToUser(ctx, user.ID, "user")
+	token, err := lib.GenerateRandomToken(32)
 	if err != nil {
-		log.Printf("Error assigning role to user: %v", err)
-		// Continue even if role assignment fails - user can still login
+		log.Printf("Error generating verification token: %v", err)
+		lib.JSONError(w, http.StatusInternalServerError, "Internal server error")
+		return
 	}
+	tokenHash := lib.HashToken(token)
+	expiresAt := time.Now().Add(30 * time.Minute) // Token expires in 30 minutes
 
-	// Generate tokens
-	accessToken, err := lib.GenerateAccessToken(user.ID, user.Email)
+	err = db.UpdateVerificationToken(ctx, user.ID, tokenHash, expiresAt)
 	if err != nil {
-		log.Printf("Error generating access token: %v", err)
+		log.Printf("Error storing verification token: %v", err)
 		lib.JSONError(w, http.StatusInternalServerError, "Internal server error")
 		return
 	}
 
-	refreshToken, err := lib.GenerateRefreshToken(user.ID)
+	// Send verification email
+	verificationURL := fmt.Sprintf("%s/verify-email?token=%s", cfg.FrontendURL, token)
+	emailBody := services.GenerateVerificationEmail(user.Name, verificationURL)
+	log.Print(verificationURL)
+	err = services.SendMail(
+		user.Email,
+		"Verify Your Email Address",
+		emailBody,
+		true, // isHTML
+		cfg.SMTPHost,
+		cfg.SMTPPort,
+		cfg.SMTPSender,
+		cfg.SMTPPassword,
+	)
 	if err != nil {
-		log.Printf("Error generating refresh token: %v", err)
-		lib.JSONError(w, http.StatusInternalServerError, "Internal server error")
-		return
+		log.Printf("Error sending verification email to %s: %v", user.Email, err)
 	}
 
-	// Store refresh token
-	tokenHash := lib.HashToken(refreshToken)
-	expiresAt := time.Now().Add(lib.GetRefreshExpiry())
-	deviceInfo := r.UserAgent()
-
-	err = db.SaveRefreshToken(ctx, user.ID, tokenHash, expiresAt, deviceInfo)
-	if err != nil {
-		log.Printf("Error saving refresh token: %v", err)
-		lib.JSONError(w, http.StatusInternalServerError, "Internal server error")
-		return
-	}
-
-	// Set refresh token cookie
-	setRefreshTokenCookie(w, refreshToken)
-
-	// Send response
-	response := models.AuthResponse{
-		User:        *user,
-		AccessToken: accessToken,
+	response := types.RegisterResponse{
+		Message: "Registration successful. Please check your email to verify your account.",
+		Email:   user.Email,
 	}
 	lib.JSON(w, http.StatusCreated, response)
 }
 
 // HandleLogin handles user login with email and password
 func HandleLogin(w http.ResponseWriter, r *http.Request) {
-	var req models.LoginRequest
+	var req types.LoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		lib.JSONError(w, http.StatusBadRequest, "Invalid request body")
 		return
@@ -156,6 +142,12 @@ func HandleLogin(w http.ResponseWriter, r *http.Request) {
 	// Check if user is active
 	if !user.IsActive {
 		lib.JSONError(w, http.StatusForbidden, "Account is disabled")
+		return
+	}
+
+	// Check if email is verified
+	if !user.EmailVerified {
+		lib.JSONError(w, http.StatusForbidden, "Please verify your email before logging in. Check your inbox for the verification link.")
 		return
 	}
 
@@ -203,7 +195,7 @@ func HandleLogin(w http.ResponseWriter, r *http.Request) {
 	setRefreshTokenCookie(w, refreshToken)
 
 	// Send response
-	response := models.AuthResponse{
+	response := types.AuthResponse{
 		User:        *user,
 		AccessToken: accessToken,
 	}
@@ -263,7 +255,7 @@ func HandleRefresh(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Send response
-	response := models.RefreshResponse{
+	response := types.RefreshResponse{
 		AccessToken: accessToken,
 	}
 	lib.JSON(w, http.StatusOK, response)
@@ -312,11 +304,122 @@ func HandleGetMe(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Return user profile with roles (roles already in context from middleware)
-	response := models.UserProfile{
+	response := types.UserProfile{
 		User:  *user,
 		Roles: userCtx.Roles,
 	}
 
+	lib.JSON(w, http.StatusOK, response)
+}
+
+// HandleVerifyEmail handles email verification using the token sent via email
+func HandleVerifyEmail(w http.ResponseWriter, r *http.Request) {
+	// Get token from query parameter
+	token := r.URL.Query().Get("token")
+	if token == "" {
+		lib.JSONError(w, http.StatusBadRequest, "Verification token is required")
+		return
+	}
+
+	ctx := r.Context()
+	// Hash the token to match stored hash
+	tokenHash := lib.HashToken(token)
+	// Verify email using the hashed token
+	err := db.VerifyEmail(ctx, tokenHash)
+	if err != nil {
+		log.Printf("Error verifying email: %v", err)
+		lib.JSONError(w, http.StatusBadRequest, "Invalid or expired verification token")
+		return
+	}
+
+	// Send success response
+	response := types.VerificationResponse{
+		Message: "Email verified successfully. You can now login.",
+	}
+	lib.JSON(w, http.StatusOK, response)
+}
+
+// HandleResendVerification handles resending verification email
+func HandleResendVerification(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
+	var req types.ResendVerificationRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		lib.JSONError(w, http.StatusBadRequest, "Invalid request body")
+		return
+	}
+
+	// Validate email
+	req.Email = strings.TrimSpace(strings.ToLower(req.Email))
+	if req.Email == "" {
+		lib.JSONError(w, http.StatusBadRequest, "Email is required")
+		return
+	}
+
+	ctx := r.Context()
+
+	// Get user by email
+	user, _, err := db.GetUserByEmail(ctx, req.Email)
+	if err != nil {
+		// Don't reveal whether email exists - return success anyway
+		response := types.VerificationResponse{
+			Message: "If the email exists and is not verified, a verification link has been sent.",
+		}
+		lib.JSON(w, http.StatusOK, response)
+		return
+	}
+
+	// Check if already verified
+	if user.EmailVerified {
+		lib.JSONError(w, http.StatusBadRequest, "Email is already verified")
+		return
+	}
+
+	// Generate new verification token
+	token, err := lib.GenerateRandomToken(32)
+	if err != nil {
+		log.Printf("Error generating verification token: %v", err)
+		lib.JSONError(w, http.StatusInternalServerError, "Internal server error")
+		return
+	}
+
+	// Hash the token before storing
+	tokenHash := lib.HashToken(token)
+	expiresAt := time.Now().Add(30 * time.Minute)
+
+	// Update verification token
+	err = db.UpdateVerificationToken(ctx, user.ID, tokenHash, expiresAt)
+	if err != nil {
+		log.Printf("Error updating verification token: %v", err)
+		lib.JSONError(w, http.StatusInternalServerError, "Internal server error")
+		return
+	}
+
+	// Send verification email
+	verificationURL := fmt.Sprintf("%s/verify-email?token=%s", cfg.FrontendURL, token)
+	emailBody := services.GenerateVerificationEmail(user.Name, verificationURL)
+
+	err = services.SendMail(
+		user.Email,
+		"Verify Your Email Address",
+		emailBody,
+		true, // isHTML
+		cfg.SMTPHost,
+		cfg.SMTPPort,
+		cfg.SMTPSender,
+		cfg.SMTPPassword,
+	)
+	if err != nil {
+		log.Printf("Error sending verification email to %s: %v", user.Email, err)
+		lib.JSONError(w, http.StatusInternalServerError, "Failed to send verification email")
+		return
+	}
+
+	log.Printf("Verification email resent to %s", user.Email)
+
+	// Send success response
+	response := types.VerificationResponse{
+		Message: "Verification email has been sent. Please check your inbox.",
+		Email:   user.Email,
+	}
 	lib.JSON(w, http.StatusOK, response)
 }
 
