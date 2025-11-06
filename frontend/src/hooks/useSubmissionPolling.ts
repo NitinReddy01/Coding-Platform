@@ -30,7 +30,6 @@ export const useSubmissionPolling = (submissionId: string | null) => {
           intervalRef.current = null;
         }
       }
-      console.log(data);
     } catch (err) {
       const message = getErrorMessage(err, 'Failed to fetch submission status');
       setError(message);
