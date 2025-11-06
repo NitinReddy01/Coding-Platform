@@ -23,7 +23,7 @@ SELECT
     now(),
     now()
 FROM users u
-WHERE u.email = 'nitingogula@gmail.com'
+WHERE u.email = 'nitin@gmail.com'
 ON CONFLICT DO NOTHING;
 
 -- Assign admin role to admin user
@@ -34,7 +34,7 @@ SELECT
     r.id
 FROM users u
 CROSS JOIN roles r
-WHERE u.email = 'nitingogula@gmail.com'
+WHERE u.email = 'nitin@gmail.com'
 AND r.name = 'admin'
 ON CONFLICT (user_id, role_id) DO NOTHING;
 
@@ -46,16 +46,16 @@ ON CONFLICT (user_id, role_id) DO NOTHING;
 -- Remove admin role assignment
 DELETE FROM user_roles
 WHERE user_id IN (
-    SELECT id FROM users WHERE email = 'nitingogula@gmail.com'
+    SELECT id FROM users WHERE email = 'nitin@gmail.com'
 );
 
 -- Remove authentication record
 DELETE FROM authentication
 WHERE user_id IN (
-    SELECT id FROM users WHERE email = 'nitingogula@gmail.com'
+    SELECT id FROM users WHERE email = 'nitin@gmail.com'
 );
 
 -- Remove admin user
-DELETE FROM users WHERE email = 'nitingogula@gmail.com';
+DELETE FROM users WHERE email = 'nitin@gmail.com';
 
 -- +goose StatementEnd
