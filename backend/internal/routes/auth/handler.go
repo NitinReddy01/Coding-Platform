@@ -431,8 +431,8 @@ func setRefreshTokenCookie(w http.ResponseWriter, token string) {
 		Path:     "/api/auth",
 		MaxAge:   7 * 24 * 60 * 60, // 7 days
 		HttpOnly: true,
-		Secure:   true, // Set to true in production with HTTPS
-		SameSite: http.SameSiteLaxMode,
+		Secure:   true, // Required for SameSite=None
+		SameSite: http.SameSiteNoneMode, // Allow cross-domain cookies with HTTPS
 	}
 	http.SetCookie(w, cookie)
 }
@@ -445,8 +445,8 @@ func clearRefreshTokenCookie(w http.ResponseWriter) {
 		Path:     "/api/auth",
 		MaxAge:   -1,
 		HttpOnly: true,
-		Secure:   false,
-		SameSite: http.SameSiteLaxMode,
+		Secure:   true, // Required for SameSite=None
+		SameSite: http.SameSiteNoneMode, // Allow cross-domain cookies with HTTPS
 	}
 	http.SetCookie(w, cookie)
 }
