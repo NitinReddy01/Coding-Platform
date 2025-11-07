@@ -10,34 +10,37 @@ interface EditorToolbarProps {
   isRunning: boolean;
   isSubmitting: boolean;
   isPolling?: boolean;
+  hasSampleTestCases?: boolean;
 }
 
-function EditorToolbarComponent({ onRun, onSubmit, isRunning, isSubmitting, isPolling = false }: EditorToolbarProps) {
+function EditorToolbarComponent({ onRun, onSubmit, isRunning, isSubmitting, isPolling = false, hasSampleTestCases = true }: EditorToolbarProps) {
 
   return (
     <div className="flex items-center justify-between border-b-2 border-border bg-gradient-to-r from-background via-card to-background px-4 py-3 shadow-sm">
       <LanguageSelector />
 
       <div className="flex gap-3">
-        <Button
-          variant="warning"
-          onClick={onRun}
-          disabled={isRunning || isSubmitting || isPolling}
-          size="default"
-        >
-          {isRunning ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Running...
-            </>
-          ) : (
-            <>
-              <Play className="w-4 h-4" fill="currentColor" />
-              Run Code
-              <KeyboardBadge shortcut="Quote" withCtrl />
-            </>
-          )}
-        </Button>
+        {hasSampleTestCases && (
+          <Button
+            variant="warning"
+            onClick={onRun}
+            disabled={isRunning || isSubmitting || isPolling}
+            size="default"
+          >
+            {isRunning ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Running...
+              </>
+            ) : (
+              <>
+                <Play className="w-4 h-4" fill="currentColor" />
+                Run Code
+                <KeyboardBadge shortcut="Quote" withCtrl />
+              </>
+            )}
+          </Button>
+        )}
 
         <Button
           variant="success"

@@ -114,7 +114,7 @@ export function ProblemLayout({ problem, onRun, onSubmit, runCodeFn, submitCodeF
           style={{ width: `${100 - leftWidth}%` }}
         >
           {/* Editor Toolbar */}
-          <EditorToolbar onRun={onRun} onSubmit={onSubmit} isRunning={isRunning} isSubmitting={isSubmitting} isPolling={isPolling} />
+          <EditorToolbar onRun={onRun} onSubmit={onSubmit} isRunning={isRunning} isSubmitting={isSubmitting} isPolling={isPolling} hasSampleTestCases={problem.sample_test_cases.length > 0} />
 
           {/* Editor */}
           <div
@@ -165,7 +165,7 @@ export function ProblemLayout({ problem, onRun, onSubmit, runCodeFn, submitCodeF
         ) : (
           <div className="flex flex-col h-full">
             {/* Editor Toolbar */}
-            <EditorToolbar onRun={onRun} onSubmit={onSubmit} isRunning={isRunning} isSubmitting={isSubmitting} isPolling={isPolling} />
+            <EditorToolbar onRun={onRun} onSubmit={onSubmit} isRunning={isRunning} isSubmitting={isSubmitting} isPolling={isPolling} hasSampleTestCases={problem.sample_test_cases.length > 0} />
 
             {/* Editor - 60% height */}
             <div className="h-[60%] overflow-hidden">
