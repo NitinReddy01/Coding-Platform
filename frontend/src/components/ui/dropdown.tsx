@@ -70,7 +70,7 @@ export function Dropdown({
       {isOpen && (
         <div
           className={cn(
-            'absolute z-50 mt-2 min-w-[200px] rounded-md bg-card border border-border shadow-lg',
+            'absolute z-[9999] mt-2 min-w-[200px] rounded-md bg-gradient-card border border-border shadow-lg',
             align === 'right' ? 'right-0' : 'left-0'
           )}
         >
