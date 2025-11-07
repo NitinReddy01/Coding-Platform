@@ -22,7 +22,7 @@ func handleSendMail(w http.ResponseWriter, r *http.Request, cfg *config.Config) 
 		return
 	}
 
-	if err := services.SendMail(req.To, req.Subject, req.Message, req.IsHTML, cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPSender, cfg.SMTPPassword); err != nil {
+	if err := services.SendMail(req.To, req.Subject, req.Message, cfg.ResendAPIKey); err != nil {
 		log.Printf("Error when sending mail %v", err)
 		lib.InternalErrorHandler(w)
 		return

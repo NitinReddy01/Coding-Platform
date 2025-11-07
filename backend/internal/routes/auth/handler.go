@@ -97,11 +97,7 @@ func HandleRegister(w http.ResponseWriter, r *http.Request, cfg *config.Config) 
 		user.Email,
 		"Verify Your Email Address",
 		emailBody,
-		true, // isHTML
-		cfg.SMTPHost,
-		cfg.SMTPPort,
-		cfg.SMTPSender,
-		cfg.SMTPPassword,
+		cfg.ResendAPIKey,
 	)
 
 	response := types.RegisterResponse{
@@ -399,11 +395,7 @@ func HandleResendVerification(w http.ResponseWriter, r *http.Request, cfg *confi
 		user.Email,
 		"Verify Your Email Address",
 		emailBody,
-		true, // isHTML
-		cfg.SMTPHost,
-		cfg.SMTPPort,
-		cfg.SMTPSender,
-		cfg.SMTPPassword,
+		cfg.ResendAPIKey,
 	)
 
 	log.Printf("Verification email queued for %s", user.Email)

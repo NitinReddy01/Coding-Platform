@@ -1,35 +1,23 @@
 package services
 
 import (
-	"crypto/tls"
 	"log"
-	"time"
 
-	gomail "gopkg.in/mail.v2"
+	"github.com/resend/resend-go/v3"
 )
 
-func SendMail(to string, subject string, body string, isHtml bool, smtpHost string, smtpPort int, smtpSender string, smtpPassword string) error {
-	// Create a new message
-	m := gomail.NewMessage()
-	m.SetHeader("From", smtpSender)
-	m.SetHeader("To", to)
-	m.SetHeader("Subject", subject)
+func SendMail(to string, subject string, body string, apiKey string) error {
+	client := resend.NewClient(apiKey)
 
-	if isHtml {
-		m.SetBody("text/html", body)
-	} else {
-		m.SetBody("text/plain", body)
+	params := &resend.SendEmailRequest{
+		From:    "Nitin <nitingogula@gmail.com>",
+		To:      []string{to},
+		Subject: subject,
+		Html:    body,
 	}
+	_, err := client.Emails.Send(params)
 
-	// Create a dialer with explicit TLS configuration
-	d := gomail.NewDialer(smtpHost, smtpPort, smtpSender, smtpPassword)
-	d.Timeout = 10 * time.Second
-	d.TLSConfig = &tls.Config{
-		ServerName: smtpHost,
-	}
-
-	// Send the email
-	if err := d.DialAndSend(m); err != nil {
+	if err != nil {
 		return err
 	}
 
@@ -37,9 +25,9 @@ func SendMail(to string, subject string, body string, isHtml bool, smtpHost stri
 }
 
 // SendMailAsync sends email asynchronously without blocking
-func SendMailAsync(to string, subject string, body string, isHtml bool, smtpHost string, smtpPort int, smtpSender string, smtpPassword string) {
+func SendMailAsync(to string, subject string, body string, apiKey string) {
 	go func() {
-		err := SendMail(to, subject, body, isHtml, smtpHost, smtpPort, smtpSender, smtpPassword)
+		err := SendMail(to, subject, body, apiKey)
 		if err != nil {
 			log.Printf("Error sending email to %s: %v", to, err)
 		} else {
