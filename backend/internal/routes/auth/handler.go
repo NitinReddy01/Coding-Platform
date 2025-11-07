@@ -89,11 +89,11 @@ func HandleRegister(w http.ResponseWriter, r *http.Request, cfg *config.Config) 
 		return
 	}
 
-	// Send verification email
+	// Send verification email asynchronously
 	verificationURL := fmt.Sprintf("%s/verify-email?token=%s", cfg.FrontendURL, token)
 	emailBody := services.GenerateVerificationEmail(user.Name, verificationURL)
-	log.Print(verificationURL)
-	err = services.SendMail(
+
+	services.SendMailAsync(
 		user.Email,
 		"Verify Your Email Address",
 		emailBody,
@@ -103,9 +103,6 @@ func HandleRegister(w http.ResponseWriter, r *http.Request, cfg *config.Config) 
 		cfg.SMTPSender,
 		cfg.SMTPPassword,
 	)
-	if err != nil {
-		log.Printf("Error sending verification email to %s: %v", user.Email, err)
-	}
 
 	response := types.RegisterResponse{
 		Message: "Registration successful. Please check your email to verify your account.",
@@ -397,7 +394,8 @@ func HandleResendVerification(w http.ResponseWriter, r *http.Request, cfg *confi
 	verificationURL := fmt.Sprintf("%s/verify-email?token=%s", cfg.FrontendURL, token)
 	emailBody := services.GenerateVerificationEmail(user.Name, verificationURL)
 
-	err = services.SendMail(
+	// Send verification email asynchronously
+	services.SendMailAsync(
 		user.Email,
 		"Verify Your Email Address",
 		emailBody,
@@ -407,13 +405,8 @@ func HandleResendVerification(w http.ResponseWriter, r *http.Request, cfg *confi
 		cfg.SMTPSender,
 		cfg.SMTPPassword,
 	)
-	if err != nil {
-		log.Printf("Error sending verification email to %s: %v", user.Email, err)
-		lib.JSONError(w, http.StatusInternalServerError, "Failed to send verification email")
-		return
-	}
 
-	log.Printf("Verification email resent to %s", user.Email)
+	log.Printf("Verification email queued for %s", user.Email)
 
 	// Send success response
 	response := types.VerificationResponse{
@@ -431,7 +424,7 @@ func setRefreshTokenCookie(w http.ResponseWriter, token string) {
 		Path:     "/api/auth",
 		MaxAge:   7 * 24 * 60 * 60, // 7 days
 		HttpOnly: true,
-		Secure:   true, // Required for SameSite=None
+		Secure:   true,                  // Required for SameSite=None
 		SameSite: http.SameSiteNoneMode, // Allow cross-domain cookies with HTTPS
 	}
 	http.SetCookie(w, cookie)
@@ -445,7 +438,7 @@ func clearRefreshTokenCookie(w http.ResponseWriter) {
 		Path:     "/api/auth",
 		MaxAge:   -1,
 		HttpOnly: true,
-		Secure:   true, // Required for SameSite=None
+		Secure:   true,                  // Required for SameSite=None
 		SameSite: http.SameSiteNoneMode, // Allow cross-domain cookies with HTTPS
 	}
 	http.SetCookie(w, cookie)
