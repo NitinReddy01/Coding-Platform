@@ -1,7 +1,6 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../store/store';
 import {
-  Code2,
   Search,
   Bell,
   User,
@@ -61,7 +60,7 @@ export function Navbar() {
           {/* Logo with Gradient */}
           <Link to="/dashboard" className="flex items-center gap-2 mr-6 group">
             <div className="p-2 rounded-lg bg-gradient-primary shadow-glow transition-smooth group-hover:scale-110">
-              <Code2 className="w-6 h-6 text-primary-foreground" />
+              <img src="/favicon.svg" alt="CodePlatform" className="w-6 h-6" />
             </div>
             <span className="text-xl font-bold text-gradient-primary hidden sm:inline">CodePlatform</span>
           </Link>
