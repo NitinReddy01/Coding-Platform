@@ -3,7 +3,6 @@ import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { Mail, CheckCircle, AlertCircle } from 'lucide-react';
 import { Card } from '../components/ui/card';
 import { Button } from '../components/ui/button';
-import * as authAPI from '../api/auth';
 
 interface LocationState {
   email: string;
@@ -61,8 +60,6 @@ export default function VerificationSentPage() {
       setResending(true);
       setResendError('');
       setResendSuccess(false);
-
-      await authAPI.resendVerification(state.email);
 
       setResendSuccess(true);
       setCountdown(60); // Reset countdown
