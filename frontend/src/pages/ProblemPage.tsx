@@ -5,7 +5,7 @@ import { setCode, setLanguage } from '../store/slices/editorSlice';
 import { useProblem } from '../hooks/useProblem';
 import { useSubmission } from '../hooks/useSubmission';
 import { useKeyboardShortcut } from '../hooks/useKeyboardShortcut';
-import { useAxiosPrivate } from '../hooks/useAxiosPrivate';
+import { apiClient } from '../api/axios';
 import { getLatestSubmission } from '../api/submissions';
 import { ProblemLayout } from '../components/layout/ProblemLayout';
 
@@ -13,7 +13,6 @@ export function ProblemPage() {
   const { title } = useParams<{ title: string }>();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const axiosPrivate = useAxiosPrivate();
   const [loadingLatestSubmission, setLoadingLatestSubmission] = useState(false);
 
   useEffect(() => {
@@ -51,7 +50,7 @@ export function ProblemPage() {
     const fetchLatestSubmission = async () => {
       setLoadingLatestSubmission(true);
       try {
-        const latestSubmission = await getLatestSubmission(axiosPrivate, problem.id);
+        const latestSubmission = await getLatestSubmission(apiClient, problem.id);
         // Populate editor with previous submission
         dispatch(setCode(latestSubmission.code));
         dispatch(setLanguage(latestSubmission.language));
@@ -70,7 +69,7 @@ export function ProblemPage() {
 
     fetchLatestSubmission();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [problem, axiosPrivate, dispatch, languages]);
+  }, [problem, dispatch, languages]);
 
   // Set default code when language changes (but only if no code exists)
   useEffect(() => {

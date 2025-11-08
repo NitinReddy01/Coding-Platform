@@ -16,7 +16,7 @@ import { Switch } from '../ui/Switch';
 import { ValidatorTestResults } from './ValidatorTestResults';
 import { VALIDATOR_EXAMPLES, DEFAULT_VALIDATOR_CODE, } from '../../constants/validator-examples';
 import { testValidator, type ValidateValidatorResponse } from '../../api/problems';
-import { useAxiosPrivate } from '../../hooks/useAxiosPrivate';
+import { apiClient } from '../../api/axios';
 import type { ProblemFormData, FormErrors } from '../../types/problem-form';
 import toast from 'react-hot-toast';
 import { Button } from '../ui/button';
@@ -45,7 +45,6 @@ interface ValidatorStepProps {
  * ```
  */
 export function ValidatorStep({ data, errors, onUpdate }: ValidatorStepProps) {
-  const axiosPrivate = useAxiosPrivate();
   const [isTesting, setIsTesting] = useState(false);
   const [testResults, setTestResults] = useState<ValidateValidatorResponse | null>(null);
 
@@ -97,7 +96,7 @@ export function ValidatorStep({ data, errors, onUpdate }: ValidatorStepProps) {
       }));
 
       const results = await testValidator(
-        axiosPrivate,
+        apiClient,
         data.validator_code,
         data.validator_language,
         testCases

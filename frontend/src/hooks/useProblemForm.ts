@@ -11,7 +11,7 @@ import type {
   ProblemInput,
 } from '../types/problem-form';
 import { INITIAL_FORM_DATA, FORM_LIMITS } from '../types/problem-form';
-import { useAxiosPrivate } from './useAxiosPrivate';
+import { apiClient } from '../api/axios';
 import { createProblem } from '../api/problems';
 import { getErrorMessage } from '../utils/errorHandler';
 
@@ -21,7 +21,6 @@ const STEPS: FormStep[] = ['details', 'test-cases', 'validator', 'tags', 'previe
 
 export const useProblemForm = (): ProblemFormState & ProblemFormActions => {
   const navigate = useNavigate();
-  const axiosPrivate = useAxiosPrivate();
   const [data, setData] = useState<ProblemFormData>(INITIAL_FORM_DATA);
   const [currentStep, setCurrentStep] = useState<FormStep>('details');
   const [errors, setErrors] = useState<FormErrors>({});
@@ -289,7 +288,7 @@ export const useProblemForm = (): ProblemFormState & ProblemFormActions => {
         tags: data.tags,
       };
 
-      await createProblem(axiosPrivate, problemInput);
+      await createProblem(apiClient, problemInput);
 
       toast.success('Problem created successfully!');
 
@@ -304,7 +303,7 @@ export const useProblemForm = (): ProblemFormState & ProblemFormActions => {
     } finally {
       setIsSubmitting(false);
     }
-  }, [data, validateForm, axiosPrivate, navigate]);
+  }, [data, validateForm, navigate]);
 
   const resetForm = useCallback(() => {
     setData(INITIAL_FORM_DATA);

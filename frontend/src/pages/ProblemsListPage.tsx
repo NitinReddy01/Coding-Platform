@@ -10,13 +10,12 @@ import { Pagination, PaginationInfo } from '../components/ui/pagination';
 import { Button } from '../components/ui/button';
 import { useAppDispatch, useAppSelector } from '../store/store';
 import { fetchProblems, setPage } from '../store/slices/problemsSlice';
-import { useAxiosPrivate } from '../hooks/useAxiosPrivate';
+import { apiClient } from '../api/axios';
 import { useAuth } from '../hooks/useAuth';
 
 export function ProblemsListPage() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const axiosPrivate = useAxiosPrivate();
   const { hasAnyRole } = useAuth();
   const {
     problems,
@@ -31,8 +30,8 @@ export function ProblemsListPage() {
 
   // Fetch problems on mount and when filters/sort/page change
   useEffect(() => {
-    dispatch(fetchProblems(axiosPrivate));
-  }, [dispatch, axiosPrivate, filters, sort, currentPage]);
+    dispatch(fetchProblems(apiClient));
+  }, [dispatch, filters, sort, currentPage]);
 
   const handlePageChange = (page: number) => {
     dispatch(setPage(page));

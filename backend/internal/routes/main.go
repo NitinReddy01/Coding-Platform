@@ -26,12 +26,13 @@ func New(cfg *config.Config) *chi.Mux {
 			public.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 				lib.JSON(w, http.StatusOK, map[string]string{"health": "ok"})
 			})
-
-			public.Mount("/auth", auth.AuthRoutes(cfg))
 		})
 
 		r.Group(func(private chi.Router) {
 			private.Use(middlewares.AuthMiddleware)
+
+			private.Post("/auth/sync", auth.HandleSyncUser)
+			private.Get("/auth/me", auth.HandleGetMe)
 
 			private.Mount("/problems", problems.ProblemRoutes())
 			private.Mount("/mails", mail.MailRoutes(cfg))
