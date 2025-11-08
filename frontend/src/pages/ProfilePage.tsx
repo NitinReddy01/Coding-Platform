@@ -1,5 +1,4 @@
-import { useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useState } from 'react';
 import { User } from 'lucide-react';
 import { Navbar } from '../components/layout/Navbar';
 import { Footer } from '../components/layout/Footer';
@@ -8,33 +7,23 @@ import { StatsCards } from '../components/profile/StatsCards';
 import { SolvedProblemsTab } from '../components/profile/SolvedProblemsTab';
 import { RecentActivityTab } from '../components/profile/RecentActivityTab';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs';
-import { useAppDispatch, useAppSelector } from '../store/store';
-import { fetchUserProfile, setActiveTab } from '../store/slices/userSlice';
+import {
+  mockUserProfile,
+  mockUserStats,
+  mockSolvedProblems,
+} from '../constants/mockUserData';
 
 export function ProfilePage() {
-  const { username } = useParams<{ username: string }>();
-  const dispatch = useAppDispatch();
-  const { profile, stats, solvedProblems, loading, activeTab } = useAppSelector((state) => state.user);
+  const [activeTab, setActiveTab] = useState<'solved' | 'activity'>('solved');
 
-  useEffect(() => {
-    dispatch(fetchUserProfile(username));
-  }, [dispatch, username]);
+  // Using mock data directly (will be replaced with API calls later)
+  const profile = mockUserProfile;
+  const stats = mockUserStats;
+  const solvedProblems = mockSolvedProblems;
 
   const handleTabChange = (tab: string) => {
-    dispatch(setActiveTab(tab as 'solved' | 'activity'));
+    setActiveTab(tab as 'solved' | 'activity');
   };
-
-  if (loading || !profile || !stats) {
-    return (
-      <div className="min-h-screen flex flex-col bg-background">
-        <Navbar />
-        <main className="flex-1 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
-        </main>
-        <Footer />
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen flex flex-col bg-background">

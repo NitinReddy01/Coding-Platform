@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { getSubmissionStatus } from '../api/submissions';
-import { useAxiosPrivate } from './useAxiosPrivate';
+import { apiClient } from '../api/axios';
 import { getErrorMessage } from '../utils/errorHandler';
 import type { SubmissionStatus, SubmissionStatusResponse } from '../types';
 
@@ -8,7 +8,6 @@ const POLL_INTERVAL_MS = 800;
 const PROCESSING_STATUSES: SubmissionStatus[] = ['pending', 'running'];
 
 export const useSubmissionPolling = (submissionId: string | null) => {
-  const axiosPrivate = useAxiosPrivate();
   const [statusData, setStatusData] = useState<SubmissionStatusResponse | null>(null);
   const [isPolling, setIsPolling] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -18,7 +17,7 @@ export const useSubmissionPolling = (submissionId: string | null) => {
     if (!submissionId) return;
 
     try {
-      const data = await getSubmissionStatus(axiosPrivate, submissionId);
+      const data = await getSubmissionStatus(apiClient, submissionId);
       setStatusData(data);
       setError(null);
 
@@ -39,7 +38,7 @@ export const useSubmissionPolling = (submissionId: string | null) => {
         intervalRef.current = null;
       }
     }
-  }, [axiosPrivate, submissionId]);
+  }, [submissionId]);
 
   useEffect(() => {
     if (intervalRef.current) {

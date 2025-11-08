@@ -15,11 +15,10 @@ interface LocationState {
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, isAuthenticated, loading, persist, setPersist } = useAuth();
+  const { login, isAuthenticated, loading } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [rememberMe, setRememberMe] = useState(persist);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
@@ -59,9 +58,6 @@ export const LoginPage: React.FC = () => {
     }
 
     try {
-      // Update persist preference before login
-      setPersist(rememberMe);
-
       await login({ email, password });
     } catch (err) {
       const errorMessage = getErrorMessage(err, 'Login failed. Please try again.');
@@ -123,23 +119,6 @@ export const LoginPage: React.FC = () => {
               disabled={loading}
               autoComplete="current-password"
             />
-          </div>
-
-          <div className="flex items-center">
-            <input
-              id="remember-me"
-              type="checkbox"
-              checked={rememberMe}
-              onChange={(e) => setRememberMe(e.target.checked)}
-              disabled={loading}
-              className="h-4 w-4 rounded border-border bg-input text-primary focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background"
-            />
-            <label
-              htmlFor="remember-me"
-              className="ml-2 text-sm text-muted-foreground cursor-pointer"
-            >
-              Remember me
-            </label>
           </div>
 
           <Button

@@ -1,12 +1,11 @@
 import { useState, useCallback, useEffect } from 'react';
 import { runCode, submitCode } from '../api/submissions';
-import { useAxiosPrivate } from './useAxiosPrivate';
+import { apiClient } from '../api/axios';
 import { useSubmissionPolling } from './useSubmissionPolling';
 import { getErrorMessage } from '../utils/errorHandler';
 import type { ExecutionResult, SubmissionType } from '../types';
 
 export const useSubmission = () => {
-  const axiosPrivate = useAxiosPrivate();
   const [results, setResults] = useState<ExecutionResult[]>([]);
   const [submissionId, setSubmissionId] = useState<string | null>(null);
   const [isRunning, setIsRunning] = useState(false);
@@ -50,7 +49,7 @@ export const useSubmission = () => {
     setSubmissionId(null);
 
     try {
-      const response = await runCode(axiosPrivate, code, language, problemId);
+      const response = await runCode(apiClient, code, language, problemId);
       setSubmissionId(response.submission_id);
       // Note: isRunning will be set to false by useEffect when polling completes
     } catch (err) {
@@ -60,7 +59,7 @@ export const useSubmission = () => {
       setLastSubmissionType(null);
       setSubmissionType(null);
     }
-  }, [axiosPrivate]);
+  }, []);
 
   const handleSubmitCode = useCallback(async (code: string, language: string, problemId: string) => {
     setIsSubmitting(true);
@@ -71,7 +70,7 @@ export const useSubmission = () => {
     setSubmissionId(null);
 
     try {
-      const response = await submitCode(axiosPrivate, code, language, problemId);
+      const response = await submitCode(apiClient, code, language, problemId);
       setSubmissionId(response.submission_id);
       // Note: isSubmitting will be set to false by useEffect when polling completes
     } catch (err) {
@@ -81,7 +80,7 @@ export const useSubmission = () => {
       setLastSubmissionType(null);
       setSubmissionType(null);
     }
-  }, [axiosPrivate]);
+  }, []);
 
   return {
     results,

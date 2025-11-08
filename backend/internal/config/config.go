@@ -5,7 +5,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/joho/godotenv"
 )
@@ -13,10 +12,6 @@ import (
 type Config struct {
 	Port               string
 	DB_URL             string
-	JWTAccessSecret    string
-	JWTRefreshSecret   string
-	AccessTokenExpiry  time.Duration
-	RefreshTokenExpiry time.Duration
 	AllowedOrigins     []string
 	RabbitMQURL        string
 	SMTPHost           string
@@ -26,6 +21,10 @@ type Config struct {
 	WorkerAPIKey       string
 	APIBaseURL         string
 	FrontendURL        string
+	SupabaseURL        string
+	SupabaseAnonKey    string
+	SupabaseServiceKey string
+	SupabaseJWTSecret  string
 }
 
 func Load() *Config {
@@ -42,29 +41,6 @@ func Load() *Config {
 	}
 	dbUrl := getEnv("DATABASE_URL", "postgres://postgres:secret@localhost:5432/postgres?sslmode=disable")
 
-	// JWT Configuration
-	jwtAccessSecret := getEnv("JWT_ACCESS_SECRET", "")
-	if jwtAccessSecret == "" {
-		log.Fatal("JWT_ACCESS_SECRET is required in .env file")
-	}
-	jwtRefreshSecret := getEnv("JWT_REFRESH_SECRET", "")
-	if jwtRefreshSecret == "" {
-		log.Fatal("JWT_REFRESH_SECRET is required in .env file")
-	}
-
-	// Parse and validate token expiry durations
-	accessTokenExpiryStr := getEnv("ACCESS_TOKEN_EXPIRY", "15m")
-	accessTokenExpiry, err := time.ParseDuration(accessTokenExpiryStr)
-	if err != nil {
-		log.Fatalf("Invalid ACCESS_TOKEN_EXPIRY '%s': %v", accessTokenExpiryStr, err)
-	}
-
-	refreshTokenExpiryStr := getEnv("REFRESH_TOKEN_EXPIRY", "168h")
-	refreshTokenExpiry, err := time.ParseDuration(refreshTokenExpiryStr)
-	if err != nil {
-		log.Fatalf("Invalid REFRESH_TOKEN_EXPIRY '%s': %v", refreshTokenExpiryStr, err)
-	}
-
 	// Parse CORS allowed origins
 	allowedOriginsStr := getEnv("CORS_ALLOWED_ORIGINS", "http://localhost:5173")
 	allowedOrigins := parseAllowedOrigins(allowedOriginsStr)
@@ -73,32 +49,6 @@ func Load() *Config {
 
 	if rabbitMqUrl == "" {
 		log.Fatal("Missing rabbit mq url")
-	}
-
-	// SMTP Configuration
-	smtpHost := getEnv("SMTP_HOST", "")
-	if smtpHost == "" {
-		log.Fatal("SMTP_HOST is required in .env file")
-	}
-
-	smtpPortStr := getEnv("SMTP_PORT", "")
-	if smtpPortStr == "" {
-		log.Fatal("SMTP_PORT is required in .env file")
-	}
-
-	smtpPort, err := strconv.Atoi(smtpPortStr)
-	if err != nil {
-		log.Fatalf("Invalid SMTP_PORT '%s': %v", smtpPortStr, err)
-	}
-
-	smtpSender := getEnv("SMTP_SENDER", "")
-	if smtpSender == "" {
-		log.Fatal("SMTP_SENDER is required in .env file")
-	}
-
-	smtpPassword := getEnv("SMTP_PASSWORD", "")
-	if smtpPassword == "" {
-		log.Fatal("SMTP_PASSWORD is required in .env file")
 	}
 
 	// Worker API configuration
@@ -110,22 +60,39 @@ func Load() *Config {
 	apiBaseURL := getEnv("API_BASE_URL", "http://localhost:4000")
 	frontendURL := getEnv("FRONTEND_URL", "http://localhost:5173")
 
+	// Supabase Configuration
+	supabaseURL := getEnv("SUPABASE_URL", "")
+	if supabaseURL == "" {
+		log.Fatal("SUPABASE_URL is required in .env file")
+	}
+
+	supabaseAnonKey := getEnv("SUPABASE_ANON_KEY", "")
+	if supabaseAnonKey == "" {
+		log.Fatal("SUPABASE_ANON_KEY is required in .env file")
+	}
+
+	supabaseServiceKey := getEnv("SUPABASE_SERVICE_KEY", "")
+	if supabaseServiceKey == "" {
+		log.Fatal("SUPABASE_SERVICE_KEY is required in .env file")
+	}
+
+	supabaseJWTSecret := getEnv("SUPABASE_JWT_SECRET", "")
+	if supabaseJWTSecret == "" {
+		log.Fatal("JWT is required in .env file")
+	}
+
 	config := &Config{
 		Port:               portString,
 		DB_URL:             dbUrl,
-		JWTAccessSecret:    jwtAccessSecret,
-		JWTRefreshSecret:   jwtRefreshSecret,
-		AccessTokenExpiry:  accessTokenExpiry,
-		RefreshTokenExpiry: refreshTokenExpiry,
 		AllowedOrigins:     allowedOrigins,
 		RabbitMQURL:        rabbitMqUrl,
-		SMTPHost:           smtpHost,
-		SMTPPort:           smtpPort,
-		SMTPSender:         smtpSender,
-		SMTPPassword:       smtpPassword,
 		WorkerAPIKey:       workerAPIKey,
 		APIBaseURL:         apiBaseURL,
 		FrontendURL:        frontendURL,
+		SupabaseURL:        supabaseURL,
+		SupabaseAnonKey:    supabaseAnonKey,
+		SupabaseServiceKey: supabaseServiceKey,
+		SupabaseJWTSecret:  supabaseJWTSecret,
 	}
 	return config
 }

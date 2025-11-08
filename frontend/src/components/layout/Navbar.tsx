@@ -1,5 +1,5 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { useAppDispatch, useAppSelector } from '../../store/store';
+import { useAppSelector } from '../../store/store';
 import {
   Search,
   Bell,
@@ -11,18 +11,17 @@ import {
 } from 'lucide-react';
 import { Avatar } from '../ui/avatar';
 import { Dropdown } from '../ui/dropdown';
-import { logout } from '../../store/slices/authSlice';
+import { useAuth } from '../../hooks/useAuth';
 import { cn } from '../../lib/utils';
 
 export function Navbar() {
-  const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const location = useLocation();
   const user = useAppSelector((state) => state.auth.user);
+  const { logout } = useAuth();
 
   const handleLogout = () => {
-    dispatch(logout());
-    navigate('/login');
+    logout();
   };
 
   const navLinks = [

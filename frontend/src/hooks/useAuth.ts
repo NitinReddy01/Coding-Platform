@@ -5,8 +5,8 @@ import {
   setCredentials,
   logout as logoutAction,
   setLoading,
-  setPersist as setPersistAction,
 } from '../store/slices/authSlice';
+import { supabase } from '../lib/supabaseClient';
 import * as authAPI from '../api/auth';
 import type { LoginRequest, RegisterRequest } from '../types/auth';
 
@@ -15,12 +15,10 @@ interface UseAuthReturn {
   user: RootState['auth']['user'];
   isAuthenticated: boolean;
   loading: boolean;
-  persist: boolean;
   roles: string[];
   login: (credentials: LoginRequest) => Promise<void>;
   register: (data: RegisterRequest) => Promise<void>;
   logout: () => Promise<void>;
-  setPersist: (persist: boolean) => void;
   hasRole: (role: string) => boolean;
   hasAnyRole: (...roles: string[]) => boolean;
   isAdmin: () => boolean;
@@ -30,28 +28,48 @@ interface UseAuthReturn {
 export const useAuth = (): UseAuthReturn => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const { user, isAuthenticated, loading, persist } = useAppSelector(
-    (state) => state.auth
-  );
+  const { user, loading } = useAppSelector((state) => state.auth);
+  const isAuthenticated = !!user;
 
   const login = useCallback(
     async (credentials: LoginRequest) => {
       try {
         dispatch(setLoading(true));
 
-        const { user, accessToken } = await authAPI.login(credentials);
+        // Sign in with Supabase
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: credentials.email,
+          password: credentials.password,
+        });
 
-        // Update Redux with user and token
-        dispatch(setCredentials({ user, accessToken }));
+        if (error) {
+          throw new Error(error.message);
+        }
 
-        // Navigate to problems list page
-        navigate('/problems');
+        if (!data.user || !data.session) {
+          throw new Error('Login failed - no user or session returned');
+        }
+
+        // Sync user with backend to get roles and create user record
+        const userProfile = await authAPI.syncUser();
+
+        // Update Redux with user profile (includes roles from backend)
+        // This also sets loading to false and isAuthenticated to true
+        dispatch(setCredentials({ user: userProfile }));
+
+        // Navigation is handled by LoginPage useEffect when isAuthenticated becomes true
+        // Do NOT navigate here to avoid race conditions
       } catch (error) {
+        // Clean up on error - sign out from Supabase to avoid invalid session state
+        await supabase.auth.signOut();
+
+        // Ensure loading state is cleared
         dispatch(setLoading(false));
+
         throw error; // Re-throw to let component handle error display
       }
     },
-    [dispatch, navigate]
+    [dispatch]
   );
 
   const register = useCallback(
@@ -59,30 +77,57 @@ export const useAuth = (): UseAuthReturn => {
       try {
         dispatch(setLoading(true));
 
-        const { message, email } = await authAPI.register(data);
+        console.log('Starting Supabase signup...', { email: data.email });
 
-        // Registration successful - user needs to verify email
-        // No tokens returned, so don't set credentials
+        // Sign up with Supabase (sends verification email automatically)
+        const { data: authData, error } = await supabase.auth.signUp({
+          email: data.email,
+          password: data.password,
+          options: {
+            data: {
+              name: data.name,
+            },
+          },
+        });
+
+        console.log('Supabase signup response:', { authData, error });
+
+        if (error) {
+          console.error('Supabase signup error:', error);
+          throw new Error(error.message);
+        }
+
         dispatch(setLoading(false));
 
-        // Navigate to verification sent page with email and message
-        navigate('/verify-email-sent', { state: { email, message } });
+        // Navigate to verification sent page
+        navigate('/verify-email-sent', {
+          state: {
+            email: data.email,
+            message: 'Please check your email to verify your account.',
+          },
+        });
       } catch (error) {
+        console.error('Register catch block error:', error);
+
+        // Clean up on error - sign out from Supabase to avoid invalid session state
+        await supabase.auth.signOut();
+
+        // Ensure loading state is cleared
         dispatch(setLoading(false));
+
         throw error; // Re-throw to let component handle error display
       }
     },
     [dispatch, navigate]
   );
 
-
   const logout = useCallback(async () => {
     try {
-      // Call backend to invalidate refresh token
-      await authAPI.logout();
+      // Sign out from Supabase
+      await supabase.auth.signOut();
     } catch (error) {
       // Log error but continue with local logout
-      console.error('Logout API call failed:', error);
+      console.error('Supabase logout failed:', error);
     } finally {
       // Clear Redux state regardless of API call result
       dispatch(logoutAction());
@@ -92,15 +137,7 @@ export const useAuth = (): UseAuthReturn => {
     }
   }, [dispatch, navigate]);
 
-  const setPersist = useCallback(
-    (persist: boolean) => {
-      dispatch(setPersistAction(persist));
-    },
-    [dispatch]
-  );
-
   const roles = user?.roles || [];
-
 
   const hasRole = useCallback(
     (role: string): boolean => {
@@ -109,7 +146,6 @@ export const useAuth = (): UseAuthReturn => {
     [roles]
   );
 
-
   const hasAnyRole = useCallback(
     (...checkRoles: string[]): boolean => {
       return checkRoles.some((role) => roles.includes(role));
@@ -117,11 +153,9 @@ export const useAuth = (): UseAuthReturn => {
     [roles]
   );
 
-
   const isAdmin = useCallback((): boolean => {
     return hasRole('admin');
   }, [hasRole]);
-
 
   const isAuthor = useCallback((): boolean => {
     return hasRole('author');
@@ -131,12 +165,10 @@ export const useAuth = (): UseAuthReturn => {
     user,
     isAuthenticated,
     loading,
-    persist,
     roles,
     login,
     register,
     logout,
-    setPersist,
     hasRole,
     hasAnyRole,
     isAdmin,
