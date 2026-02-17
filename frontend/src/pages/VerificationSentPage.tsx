@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { useLocation, useNavigate, Link } from 'react-router-dom';
+import { useLocation, Link } from 'react-router-dom';
 import { Mail, CheckCircle, AlertCircle } from 'lucide-react';
 import { Card } from '../components/ui/card';
 import { Button } from '../components/ui/button';
+import { supabase } from '../lib/supabaseClient';
 
 interface LocationState {
   email: string;
@@ -11,39 +12,12 @@ interface LocationState {
 
 export default function VerificationSentPage() {
   const location = useLocation();
-  const navigate = useNavigate();
   const state = location.state as LocationState | null;
 
   const [countdown, setCountdown] = useState(60);
   const [resending, setResending] = useState(false);
   const [resendSuccess, setResendSuccess] = useState(false);
   const [resendError, setResendError] = useState('');
-  const [verified, setVerified] = useState(false);
-
-  // If no email in state, redirect to register
-  useEffect(() => {
-    if (!state?.email) {
-      navigate('/register');
-    }
-  }, [state, navigate]);
-
-  // Listen for verification success from other tabs
-  useEffect(() => {
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'emailVerified') {
-        setVerified(true);
-        // Redirect to login after showing success message briefly
-        setTimeout(() => {
-          navigate('/login', {
-            state: { message: 'Email verified successfully! Please log in.' },
-          });
-        }, 2000);
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, [navigate]);
 
   // Countdown timer for resend button
   useEffect(() => {
@@ -60,6 +34,13 @@ export default function VerificationSentPage() {
       setResending(true);
       setResendError('');
       setResendSuccess(false);
+
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: state.email,
+      });
+
+      if (error) throw error;
 
       setResendSuccess(true);
       setCountdown(60); // Reset countdown
@@ -84,16 +65,6 @@ export default function VerificationSentPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md space-y-6 p-8">
-        {/* Verification Success Banner */}
-        {verified && (
-          <div className="flex items-center gap-3 rounded-lg bg-success/10 p-4 text-success">
-            <CheckCircle className="h-6 w-6 flex-shrink-0" />
-            <div className="flex-1">
-              <p className="font-medium">Email Verified!</p>
-              <p className="text-sm">Redirecting to login...</p>
-            </div>
-          </div>
-        )}
 
         {/* Icon */}
         <div className="flex justify-center">
